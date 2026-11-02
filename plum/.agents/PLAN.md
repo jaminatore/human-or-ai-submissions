@@ -42,10 +42,34 @@ Following standard ML best practices, we executed four tightly coupled steps:
 4. **Step 3.4 — Learning Curves, Semi-Supervised Pseudo-Labeling (`unlabeled.csv`), and Full 10,000-Row Kaggle Submission (`plum/submission.csv`)**:
    - Evaluated sample complexity across $N \in \{500, 1000, 2000, 5000, 8000\}$ training rows ($0.9554 \to 0.9675 \to 0.9746 \to 0.9803 \to 0.9834$).
    - Applied **Transductive 3-View TF-IDF Vocabulary Expansion + High-Confidence Calibrated Pseudo-Labeling** ($1,962 / 3,000$ unlabeled passages with $\hat{P} \ge 0.95$ or $\le 0.05$, weight $w=0.5$).
-   ### [x] Stage 4: Leaderboard Optimization — Out-of-Domain (OOD) Diagnostics, Topic-Masked Syntax & Convex Logit Fusion (`plum/leaderboard_boost.ipynb` — **Completed**)
+### [x] Stage 4: Leaderboard Optimization — Out-of-Domain (OOD) Diagnostics, Topic-Masked Syntax & Convex Logit Fusion (`plum/leaderboard_boost.ipynb` — **Completed, Kaggle Public LB: `0.97446`**)
 - Following our initial Kaggle submission (`0.93948` Public Leaderboard AUROC), we built a **Leave-Two-Domains-Out OOD Benchmark** ($1,092$ unseen `Book / Novel Summary` + `Film / TV / Review` passages) to diagnose the gap between in-distribution validation ($0.9856$) and the unseen genres in `test.csv`.
 - **Three Key Leaderboard Upgrades**:
   1. **Topic-Masked Syntactic & Morphological Skeleton (`View 4`, `ngram_range=(1,4)`)**: Replaced content nouns/verbs/adjectives with capitalization + morphological suffix tokens (`_T_ing`, `_w_tion`, `_w_ly`, `_NUM_`) while preserving all function words, pronouns, prepositions, AI transitions, and punctuation.
   2. **Regularized Damped-Structural + Stylometric LightGBM (`colsample_bytree=0.45`)**: Restored `log1p`-damped paragraph/stanza structure (`double_newline_count`, `starts_with_quote`, `has_bullet_list`, `double_space_rate`) alongside our 96 Pure + Bimodal + Genre-Z stylometric features with strong feature subsampling so trees combine structural and linguistic cues without overfitting to a single feature.
-  3. **Strictly Positive Convex Logit Fusion (`0.70 Formatting-Free Multi-View + 0.30 Regularized Structural+Stylo GBDT` + Transductive SSL)**: Eliminated negative collinear weight cancellation across linear models, boosting **Unseen-Domain OOD AUROC from $0.9517 \to 0.9906$** (cutting OOD Brier error from $0.0886 \to 0.0410$) and achieving **$0.9977$ 10,000-row 5-fold OOF AUROC**.
-- Generated the upgraded Kaggle submission in **`plum/submission.csv`** (also saved to **`plum/submission_v2_ood_boosted.csv`**).
+  3. **Strictly Positive Convex Logit Fusion (`0.70 Formatting-Free Multi-View + 0.30 Regularized Structural+Stylo GBDT` + Transductive SSL)**: Eliminated negative collinear weight cancellation across linear models, boosting **Unseen-Domain OOD AUROC from $0.9517 \to 0.9906$** (cutting OOD Brier error from $0.0886 \to 0.0410$) and jumping **Kaggle Public Leaderboard AUROC from `0.93948` $\to$ `0.97446` (+0.0350 AUROC)**!
+
+---
+
+### [ ] Stage 5: Pushing Toward 0.99+ / 0.995 Leaderboard AUROC (`model-selection-v2` Branch — **Current Focus**)
+
+To close the remaining gap from **`0.97446` $\to$ `0.990+ / 0.995`**, we must add signals that are **100% invariant to unseen writing domains (Poetry, Novels) and adversarial paraphrasing**, while fully respecting the competition rules (no external LLM API calls; local open-weight pretrained models and transductive adaptation on provided splits only):
+
+1. **Pillar 1 — Causal Language Model Token Log-Probability, Perplexity Burstiness & Fast-DetectGPT Curvature (`Zero-Shot Pretrained GPT-2 / DistilGPT-2`)**:
+   - **Why**: Surface n-grams and stylometrics measure *what* words appear, whereas a pretrained causal LM (`gpt2`) measures *how predictable each token is given its exact prefix* $\log p_\theta(w_t \mid w_{<t})$.
+   - Even when an LLM generates Poetry, Novel Summaries, or adversarially edited text, its token choices come from the high-probability head of the autoregressive distribution and exhibit **positive local log-probability curvature (Fast-DetectGPT)** and **low sentence-to-sentence perplexity variance**.
+   - **Extracted Features (20+ Universal Information-Theoretic Features)**:
+     - Passage token log-probability moments: `ll_mean`, `ll_std`, `ll_skew`, `ll_min`, `ll_q10`, `ll_q25`, `ll_q50`, `ll_q75`, `ll_q90`, and `perplexity`.
+     - **Fast-DetectGPT Conditional Curvature ($d$-score)**: Analytical sampling discrepancy $d(x) = \frac{\sum_t (\log p(w_t|w_{<t}) - \mu_t)}{\sqrt{\sum_t \sigma_t^2}}$, where $\mu_t = \sum_v p(v|w_{<t})\log p(v|w_{<t})$ (negative token entropy) and $\sigma_t^2 = \sum_v p(v|w_{<t})(\log p(v|w_{<t}) - \mu_t)^2$. This is mathematically normalized for local entropy and is the state-of-the-art zero-shot AI detector across unseen domains!
+     - **GLTR Token Rank Histogram**: Fraction of tokens in rank buckets $[1]$, $[2\text{--}10]$, $[11\text{--}100]$, $[101\text{--}1000]$, and $[>1000]$.
+     - **First-Half vs. Second-Half Log-Prob Drift** & **Token-to-Token First-Difference SD** ($\text{std}(\Delta \log p_t)$).
+
+2. **Pillar 2 — Fine-Tuned Contextual Transformer Embeddings / Classifier (`DeBERTa-v3` / `RoBERTa` + Contextual Pooling)**:
+   - Extract contextual transformer representations and fine-tune with formatting-perturbation augmentation so the transformer attends to deep syntactic/semantic coherence rather than surface newline shortcuts.
+
+3. **Pillar 3 — Multi-Family GBDT Diversity (`LightGBM` + `CatBoost` + `XGBoost` / `HistGradientBoosting`)**:
+   - Combine LightGBM with **CatBoost** (symmetric oblivious trees, which are famously resistant to overfitting on continuous information-theoretic and stylometric features) and **Scikit-Learn HistGradientBoosting / ExtraTrees** across both the **Formatting-Free** and **Damped-Structural** views.
+
+4. **Pillar 4 — Two-Stage Domain-Balanced Transductive Self-Training on `unlabeled.csv` + `test.csv`**:
+   - In Submission v2, we only pseudo-labeled `unlabeled.csv` (which has $0.1\%$ Poetry and $4.2\%$ Novel Summaries).
+   - Once our **Fast-DetectGPT Curvature + Contextual + Stylometric** ensemble predicts on `test.csv`, we select the **highest-confidence balanced top-quantile AI and Human examples within each domain of `test.csv`** (including Poetry and Novel Summaries!) alongside `unlabeled.csv` so our 4-view n-gram and GBDT classifiers directly adapt to the exact lexical & stanza patterns of `test.csv` Poetry and Novels!
