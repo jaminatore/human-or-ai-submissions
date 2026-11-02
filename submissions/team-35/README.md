@@ -2,7 +2,7 @@
 
 Kaggle team name: `team 35` (repository folder and branch use `team-35`).
 
-Team members and NetIDs: **add before marking the draft PR ready for review**.
+Team members and NetIDs: Zhitong Liu (zl2358). Add any other team members before marking the draft PR ready for review.
 
 ## Setup (PowerShell)
 
