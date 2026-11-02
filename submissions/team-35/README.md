@@ -33,6 +33,21 @@ Our team contribution is one model: character 3–5-gram TF-IDF with logistic re
 
 These results use 8,000 training rows and 2,000 validation rows, stratified 4,000/4,000 and 1,000/1,000 by class. There were no exact text passages shared between the partitions. We chose `C=10` by validation AUROC. Since the same validation set selected `C`, its score may be somewhat optimistic.
 
+## Exploratory improvement: explicit wording cues
+
+The [Wikipedia field guide on signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing) suggests negative parallelism and the rule of three as possible cues. We tested whether counts of `not ... but`, `rather than`, and approximate three-item lists improve our character model. These regex counts are divided by passage length (per 100 words), standardized using training rows only, and appended to the TF-IDF features with a fixed weight of `0.1`. Both runs use the same 8,000/2,000 split and logistic `C=10`.
+
+```powershell
+.\.venv\Scripts\python.exe style_experiment.py --train data/train.csv --output data/style/style_ablation.json
+```
+
+| Configuration | Train AUROC | Validation AUROC | Validation errors at 0.5 | Fit time (s) |
+| --- | ---: | ---: | ---: | ---: |
+| Character TF-IDF alone | 0.999995 | 0.971249 | 180 | 8.04 |
+| Character TF-IDF + wording cues | 1.000000 | 0.971205 | 173 | 9.95 |
+
+The added cues did not improve validation AUROC, the competition metric, so the final prediction pipeline remains the simpler character TF-IDF model. The lower 0.5-threshold error count is a secondary result. In the training partition, the `not ... but` cue appeared in 5.8% of human and 7.3% of AI passages, and `rather than` appeared in 1.3% and 3.0%, respectively. Our approximate three-item-list pattern appeared in 52.6% of human passages and 45.6% of AI passages. This pattern does not capture every rhetorical rule of three; none of these cues establishes authorship by itself. The field guide also notes that some observations are specific to Wikipedia, so transfer to this dataset is uncertain.
+
 ## Refit and generate a local Kaggle submission
 
 After reviewing the validation results, refit the selected approach on all 10,000 labeled rows and write 3,000 test probabilities:
@@ -46,4 +61,4 @@ The CSV columns are `id,label`, where `label` is the predicted probability that 
 
 ## AI assistance
 
-Codex helped set up the repository and draft the Q1 training script. Team members should run the experiment, inspect the data schema and results, review the code, and describe any changes and conclusions in the final report.
+Codex helped set up the repository and draft the Q1 training and wording-cue experiment scripts. Team members should run the experiments, inspect the data schema and results, review the code, and describe any changes and conclusions in the final report.
