@@ -1,4 +1,4 @@
-"""Run the Q1 Human-or-AI baseline comparison on a fixed validation split."""
+"""Train and evaluate Team 35's character TF-IDF logistic baseline."""
 
 from __future__ import annotations
 
@@ -14,7 +14,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 
 
@@ -30,27 +29,12 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def make_pipeline(name: str, value: float, seed: int) -> Pipeline:
-    if name == "word_logreg":
-        vectorizer = TfidfVectorizer(
-            lowercase=True, ngram_range=(1, 2), min_df=2,
-            max_features=100_000, sublinear_tf=True,
-        )
-        classifier = LogisticRegression(C=value, max_iter=1000, random_state=seed)
-    elif name == "char_logreg":
-        vectorizer = TfidfVectorizer(
-            analyzer="char", lowercase=True, ngram_range=(3, 5), min_df=2,
-            max_features=150_000, sublinear_tf=True,
-        )
-        classifier = LogisticRegression(C=value, max_iter=1000, random_state=seed)
-    elif name == "word_nb":
-        vectorizer = TfidfVectorizer(
-            lowercase=True, ngram_range=(1, 2), min_df=2,
-            max_features=100_000, sublinear_tf=True,
-        )
-        classifier = MultinomialNB(alpha=value)
-    else:
-        raise ValueError(f"Unknown model: {name}")
+def make_pipeline(value: float, seed: int) -> Pipeline:
+    vectorizer = TfidfVectorizer(
+        analyzer="char", lowercase=True, ngram_range=(3, 5), min_df=2,
+        max_features=150_000, sublinear_tf=True,
+    )
+    classifier = LogisticRegression(C=value, max_iter=1000, random_state=seed)
     return Pipeline([("tfidf", vectorizer), ("classifier", classifier)])
 
 
@@ -78,35 +62,29 @@ def main() -> None:
     if overlap:
         print(f"Warning: {overlap} exact text passages occur in both partitions")
 
-    grid = {
-        "word_logreg": ("C", [0.1, 1.0, 10.0]),
-        "char_logreg": ("C", [0.1, 1.0, 10.0]),
-        "word_nb": ("alpha", [0.1, 1.0, 10.0]),
-    }
     search_rows = []
-    best_by_model = {}
-    for name, (parameter, values) in grid.items():
-        for value in values:
-            model = make_pipeline(name, value, args.seed)
-            start = time.perf_counter()
-            model.fit(x_train, y_train)
-            train_seconds = time.perf_counter() - start
-            train_auc = roc_auc_score(y_train, model.predict_proba(x_train)[:, 1])
-            val_auc = roc_auc_score(y_val, model.predict_proba(x_val)[:, 1])
-            row = {
-                "model": name, "parameter": parameter, "value": value,
-                "train_auc": float(train_auc), "validation_auc": float(val_auc),
-                "train_seconds": round(train_seconds, 3),
-            }
-            search_rows.append(row)
-            print(f"{name:12} {parameter}={value:<4} train={train_auc:.4f} val={val_auc:.4f} fit={train_seconds:.1f}s", flush=True)
-            if name not in best_by_model or val_auc > best_by_model[name]["validation_auc"]:
-                best_by_model[name] = row
+    for value in (0.1, 1.0, 10.0):
+        model = make_pipeline(value, args.seed)
+        start = time.perf_counter()
+        model.fit(x_train, y_train)
+        train_seconds = time.perf_counter() - start
+        train_probability = model.predict_proba(x_train)[:, 1]
+        val_probability = model.predict_proba(x_val)[:, 1]
+        train_auc = roc_auc_score(y_train, train_probability)
+        val_auc = roc_auc_score(y_val, val_probability)
+        row = {
+            "model": "char_logreg", "C": value,
+            "train_auc": float(train_auc), "validation_auc": float(val_auc),
+            "train_errors_at_0.5": int(np.sum((train_probability >= 0.5) != y_train)),
+            "validation_errors_at_0.5": int(np.sum((val_probability >= 0.5) != y_val)),
+            "train_seconds": round(train_seconds, 3),
+        }
+        search_rows.append(row)
+        print(f"char_logreg C={value:<4} train={train_auc:.4f} val={val_auc:.4f} fit={train_seconds:.1f}s", flush=True)
 
-    winner = max(best_by_model.values(), key=lambda row: row["validation_auc"])
+    winner = max(search_rows, key=lambda row: row["validation_auc"])
     args.output_dir.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(search_rows).to_csv(args.output_dir / "q1_search.csv", index=False)
-    pd.DataFrame(best_by_model.values()).to_csv(args.output_dir / "q1_models.csv", index=False)
     summary = {
         "seed": args.seed,
         "train_rows": len(train_idx),
@@ -114,17 +92,17 @@ def main() -> None:
         "train_class_counts": np.bincount(y_train.astype(int), minlength=2).tolist(),
         "validation_class_counts": np.bincount(y_val.astype(int), minlength=2).tolist(),
         "exact_text_overlap": overlap,
-        "selection_rule": "Highest AUROC on the fixed validation partition",
-        "selected_model": winner,
-        "note": "Validation was used for hyperparameter and model selection; these are not Kaggle test scores.",
+        "selection_rule": "Highest AUROC on the fixed validation partition within the character logistic model",
+        "selected_setting": winner,
+        "note": "Validation was used to select C; this is not a Kaggle test score.",
     }
     (args.output_dir / "q1_summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     if args.refit_all:
-        model = make_pipeline(winner["model"], winner["value"], args.seed)
+        model = make_pipeline(winner["C"], args.seed)
         model.fit(texts, labels)
         joblib.dump(model, args.output_dir / "model.joblib")
         print(f"Saved full-data model to {args.output_dir / 'model.joblib'}")
-    print(f"Selected: {winner['model']} ({winner['parameter']}={winner['value']})")
+    print(f"Selected: character TF-IDF logistic regression (C={winner['C']})")
     print(f"Results: {args.output_dir}")
 
 

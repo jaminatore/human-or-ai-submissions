@@ -2,7 +2,7 @@
 
 Kaggle team name: `team 35` (repository folder and branch use `team-35`).
 
-Team members and NetIDs: **add before opening the PR**.
+Team members and NetIDs: **add before marking the draft PR ready for review**.
 
 ## Setup (PowerShell)
 
@@ -15,23 +15,23 @@ py -m venv .venv
 
 Place the Kaggle `train.csv` and `test.csv` in `data/`. The repository ignores `data/` and CSV files, so the competition data stays local.
 
-## Q1: model comparison
+## Q1: our character TF-IDF logistic model
 
 ```powershell
 .\.venv\Scripts\python.exe train.py --train data/train.csv --output-dir data/q1
 ```
 
-The script reserves one stratified 2,000-row validation set (seed `20261023`) and keeps it fixed for all candidates. It compares word unigram/bigram TF-IDF with logistic regression, character 3–5-gram TF-IDF with logistic regression, and word unigram/bigram TF-IDF with multinomial Naive Bayes. It searches `C` or `alpha` over `{0.1, 1, 10}` and selects the best setting for each approach by validation AUROC. `data/q1/q1_search.csv` records every fit; `q1_models.csv` contains the best row for each approach; `q1_summary.json` records the split and selected model. Training AUROC, validation AUROC, and fit time are measured on the same split.
+Our team contribution is one model: character 3–5-gram TF-IDF with logistic regression. The script reserves one stratified 2,000-row validation set (seed `20261023`) and keeps it fixed while searching `C` over `{0.1, 1, 10}`. It selects `C` by validation AUROC. `data/q1/q1_search.csv` records every fit, including training and validation AUROC, error counts at a 0.5 threshold, and fit time. `q1_summary.json` records the split and selected setting. Other team members will provide the other approaches for the final Q1 comparison.
 
 ### Measured Q1 results
 
-| Approach | Chosen setting | Train AUROC | Validation AUROC | Fit time (s) |
+| Setting | Train AUROC | Validation AUROC | Train errors / 8,000 | Validation errors / 2,000 |
 | --- | ---: | ---: | ---: | ---: |
-| Word TF-IDF + logistic regression | C=10 | 1.0000 | 0.9434 | 1.94 |
-| Character TF-IDF + logistic regression | C=10 | 1.0000 | 0.9712 | 8.18 |
-| Word TF-IDF + multinomial Naive Bayes | alpha=1 | 0.9896 | 0.9003 | 1.87 |
+| C=0.1 | 0.963835 | 0.938598 | 808 | 260 |
+| C=1 | 0.994568 | 0.965867 | 308 | 204 |
+| C=10 | 0.999995 | 0.971249 | 14 | 180 |
 
-These results use 8,000 training rows and 2,000 validation rows, stratified 4,000/4,000 and 1,000/1,000 by class. There were no exact text passages shared between the partitions. We chose character TF-IDF + logistic regression (`C=10`) by validation AUROC. Hyperparameters and model family were both selected using this validation set, so the winning score may be somewhat optimistic. Fit times exclude vectorization of the training and validation data for scoring; they include vectorization and classifier fitting during `fit()`.
+These results use 8,000 training rows and 2,000 validation rows, stratified 4,000/4,000 and 1,000/1,000 by class. There were no exact text passages shared between the partitions. We chose `C=10` by validation AUROC. Since the same validation set selected `C`, its score may be somewhat optimistic.
 
 ## Refit and generate a local Kaggle submission
 
