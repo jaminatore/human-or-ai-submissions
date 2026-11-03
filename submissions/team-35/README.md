@@ -6,7 +6,7 @@ Team members and NetIDs: Zhitong Liu (zl2358). Add any other team members before
 
 ## Shared report draft
 
-The version-controlled LaTeX source is [`writeup/team_35_report.tex`](writeup/team_35_report.tex). Q1 currently contains Zhitong's measured character-model results and marked spaces for the other two team models. Teammates can edit this file on the team branch and contribute through the same pull request. Submit the compiled final PDF to the course portal separately.
+The version-controlled LaTeX source is [`writeup/team_35_report.tex`](writeup/team_35_report.tex). Q1 contains Zhitong's measured character-model results and marked spaces for the other two team models. `writeup/seed42_results.json` records the exact Q1 search and wording-cue ablation measurements without including competition passages. Teammates can edit the LaTeX source on the team branch and contribute through the same pull request. Submit the compiled final PDF to the course portal separately.
 ## Setup on Windows
 
 Use Python 3.14. The scripts use the CSV files in this folder's `data/` directory by default, so the scripts accept no command-line arguments (including when launched by VS Code's **Run Python File** button if its terminal starts correctly). Open `submissions/team-35` as the VS Code folder and select your regular Python 3.14 interpreter. Install dependencies into that Python installation if needed:
@@ -23,17 +23,17 @@ Place the Kaggle `train.csv` and `test.csv` in `data/`. The repository ignores `
 py train.py
 ```
 
-Our team contribution is one model: character 3–5-gram TF-IDF with logistic regression. The script reserves one stratified 2,000-row validation set (seed `20261023`) and keeps it fixed while searching `C` over `{0.1, 1, 10}`. It selects `C` by validation AUROC. `data/q1/q1_search.csv` records every fit, including training and validation AUROC, error counts at a 0.5 threshold, and fit time. `q1_summary.json` records the split and selected setting. Other team members will provide the other approaches for the final Q1 comparison.
+Our team contribution is one model: character 3–5-gram TF-IDF with logistic regression. The script reserves one stratified 2,000-row validation set (seed `42`) and keeps it fixed while searching `C` over `{0.1, 1, 10}`. It selects `C` by validation AUROC. `data/q1/q1_search.csv` records every fit, including training and validation AUROC, error counts at a 0.5 threshold, and fit time. `q1_summary.json` records the split and selected setting. Other team members will provide the other approaches for the final Q1 comparison.
 
 ### Measured Q1 results
 
 | Setting | Train AUROC | Validation AUROC | Train errors / 8,000 | Validation errors / 2,000 |
 | --- | ---: | ---: | ---: | ---: |
-| C=0.1 | 0.963835 | 0.938598 | 808 | 260 |
-| C=1 | 0.994568 | 0.965867 | 308 | 204 |
-| C=10 | 0.999995 | 0.971249 | 14 | 180 |
+| C=0.1 | 0.963456 | 0.933322 | 835 | 261 |
+| C=1 | 0.994940 | 0.961446 | 294 | 198 |
+| C=10 | 0.999897 | 0.968976 | 31 | 180 |
 
-These results use 8,000 training rows and 2,000 validation rows, stratified 4,000/4,000 and 1,000/1,000 by class. There were no exact text passages shared between the partitions. We chose `C=10` by validation AUROC. Since the same validation set selected `C`, its score may be somewhat optimistic.
+These results use 8,000 training rows and 2,000 validation rows, stratified 4,000/4,000 and 1,000/1,000 by class. They use seed `42`, matching the teammate notebook's `train_test_split` call on the same CSV row order. There were no exact text passages shared between the partitions. We chose `C=10` by validation AUROC. Since the same validation set selected `C`, its score may be somewhat optimistic.
 
 ## Exploratory improvement: explicit wording cues
 
@@ -45,10 +45,10 @@ py style_experiment.py
 
 | Configuration | Train AUROC | Validation AUROC | Validation errors at 0.5 | Fit time (s) |
 | --- | ---: | ---: | ---: | ---: |
-| Character TF-IDF alone | 0.999995 | 0.971249 | 180 | 8.04 |
-| Character TF-IDF + wording cues | 1.000000 | 0.971205 | 173 | 9.95 |
+| Character TF-IDF alone | 0.999897 | 0.968976 | 180 | 8.07 |
+| Character TF-IDF + wording cues | 1.000000 | 0.968779 | 181 | 10.42 |
 
-The added cues did not improve validation AUROC, the competition metric, so the final prediction pipeline remains the simpler character TF-IDF model. The lower 0.5-threshold error count is a secondary result. In the training partition, the `not ... but` cue appeared in 5.8% of human and 7.3% of AI passages, and `rather than` appeared in 1.3% and 3.0%, respectively. Our approximate three-item-list pattern appeared in 52.6% of human passages and 45.6% of AI passages. This pattern does not capture every rhetorical rule of three; none of these cues establishes authorship by itself. The field guide also notes that some observations are specific to Wikipedia, so transfer to this dataset is uncertain.
+The added cues reduced validation AUROC by 0.000197, the competition metric, and increased 0.5-threshold validation errors from 180 to 181. We therefore retain the simpler character TF-IDF model as our candidate. In the training partition, `not ... but` appeared in 6.1% of human and 7.8% of AI passages, and `rather than` in 1.5% and 2.9%. Our approximate three-item-list pattern appeared in 53.0% of human and 45.9% of AI passages. This pattern does not capture every rhetorical rule of three; none of these cues establishes authorship by itself. The field guide also notes that some observations are specific to Wikipedia, so transfer to this dataset is uncertain.
 
 ## Refit and generate a local Kaggle submission
 
@@ -59,7 +59,7 @@ py train.py --refit-all
 py predict.py
 ```
 
-The CSV columns are `id,label`, where `label` is the predicted probability that the passage is AI-generated. The file remains local until a team member reviews and uploads it. Q2–Q5 experiments are not part of this Q1 script yet.
+The CSV columns are `id,label`, where `label` is the predicted probability that the passage is AI-generated. The file remains local until a team member reviews and uploads it. Q2–Q4 analyses are separate from this Q1 script; the Q5 wording-cue ablation runs through `style_experiment.py`.
 
 Running `train.py` again with unchanged code, data, seed, and package versions reproduces the same AUROC and error counts; measured fit time can change with system load. It overwrites the local Q1 result files, and updates `model.joblib` only when `--refit-all` is supplied. Running `predict.py` again overwrites the local `submission.csv` with the same probabilities when the saved model and test data are unchanged. All of these outputs are Git-ignored.
 

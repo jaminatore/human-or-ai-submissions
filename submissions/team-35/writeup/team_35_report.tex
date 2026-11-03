@@ -117,7 +117,7 @@ Zhitong Liu (zl2358): character TF--IDF logistic-regression baseline, its valida
 \question{Q0.2 [0 points].}{Summarize your final approach in 3--5 sentences. What is the overall pipeline from raw text to probability?}
 \textit{Current Team 35 candidate; update after comparing teammates' models.} We lowercase each passage and represent it with character 3--5-gram TF--IDF features. A logistic-regression classifier estimates the probability of AI authorship. Its regularization strength is chosen by AUROC on a fixed 2,000-row stratified validation partition, then the selected configuration can be refit on all 10,000 labeled rows for Kaggle prediction.
 \question{Q0.3 [0 points].}{Record your final scores (enter private score only once it is revealed).}
-\begin{tabularx}{\linewidth}{@{}Yp{1.8in}@{}}\toprule Metric & Your score \\ \midrule Validation AUROC & 0.971249 (current candidate) \\ Kaggle public AUROC & [pending] \\ Kaggle private AUROC & [pending] \\ \bottomrule\end{tabularx}
+\begin{tabularx}{\linewidth}{@{}Yp{1.8in}@{}}\toprule Metric & Your score \\ \midrule Validation AUROC & 0.968976 (current candidate) \\ Kaggle public AUROC & [pending] \\ Kaggle private AUROC & [pending] \\ \bottomrule\end{tabularx}
 
 \newpage
 \section{Model comparison and selection (15 points)}
@@ -131,20 +131,20 @@ For my baseline, I used scikit-learn's character-level TF--IDF vectorizer on eac
 \question{Q1.2 [5 points].}{Which \textbf{three or more} modeling approaches did you try? Keep the labeled validation partition fixed across models.}
 \begin{tabularx}{\linewidth}{@{}p{1.24in}Yrrr@{}}\toprule
 Model & Text representation & Train AUROC & Val. AUROC & Train time \\ \midrule
-Char TF--IDF + logistic (Zhitong) & Character 3--5 grams & 0.999995 & 0.971249 & 8.1 s \\
+Char TF--IDF + logistic (Zhitong) & Character 3--5 grams & 0.999897 & 0.968976 & 8.4 s \\
 \textit{Teammate model B} & [Add measured features] & [ ] & [ ] & [ ] \\
 \textit{Teammate model C} & [Add measured features] & [ ] & [ ] & [ ] \\
 \bottomrule\end{tabularx}
-\smallnote{Zhitong's row uses logistic $C=10$ on 8,000 training rows and 2,000 validation rows; fit time varies by machine and system load. The split uses seed 20261023, is stratified by class, and has no exact passage overlap. Teammates should reuse the identical validation IDs, not merely the same validation-set size.}
+\smallnote{Zhitong's row uses logistic $C=10$ on 8,000 training rows and 2,000 validation rows; fit time varies by machine and system load. The split uses seed 42, is stratified by class, and has no exact passage overlap. Teammates should reuse the identical validation IDs, not merely the same validation-set size.}
 
 \question{Q1.3 [4 points].}{For at least \textbf{two} approaches, which hyperparameters and candidate values did you try? How did you select the final settings without using Kaggle test labels?}
 \begin{tabularx}{\linewidth}{@{}p{1.18in}Yp{1.38in}@{}}\toprule Model & Parameters/values searched & Chosen setting \\ \midrule
 Char logistic & Logistic $C \in \{0.1,1,10\}$; character $n$-grams fixed at 3--5 & $C=10$ \\
 \textit{Teammate model} & [Add actual search] & [ ] \\ \bottomrule\end{tabularx}
-I made one stratified 8,000/2,000 split from the labeled \texttt{train.csv} with seed 20261023. Each $C$ value used that same split; I chose the largest validation AUROC, without using Kaggle test labels or leaderboard feedback. Validation AUROC was 0.938598 at $C=0.1$, 0.965867 at $C=1$, and 0.971249 at $C=10$. Corresponding training AUROCs were 0.963835, 0.994568, and 0.999995. The validation set was used for this selection, so the selected validation score can be somewhat optimistic. The final model comparison still needs a second approach's search and results from a teammate.
+I made one stratified 8,000/2,000 split from the labeled \texttt{train.csv} with seed 42. Each $C$ value used that same split; I chose the largest validation AUROC, without using Kaggle test labels or leaderboard feedback. Validation AUROC was 0.933322 at $C=0.1$, 0.961446 at $C=1$, and 0.968976 at $C=10$. Corresponding training AUROCs were 0.963456, 0.994940, and 0.999897. The validation set was used for this selection, so the selected validation score can be somewhat optimistic. The final model comparison still needs a second approach's search and results from a teammate.
 
 \question{Q1.4 [3 points].}{Which approach did you choose for your final submission? Explain using validation performance, computational cost and/or stability. If you later changed the model, explain why.}
-My current candidate is character TF--IDF with logistic regression at $C=10$. Within my model's three-setting search, it had the highest validation AUROC (0.971249) and took about 8.1 seconds to fit on this PC. Training AUROC was 0.999995, giving a 0.028746 AUROC gap to validation; this suggests caution about relying on near-perfect training fit. At a 0.5 decision threshold it made 14 training errors and 180 validation errors, although Kaggle evaluates AUROC across thresholds. This is a provisional team choice: we still need the teammates' model results on the same 2,000 validation IDs before naming the team's final approach. Once selected, the chosen configuration can be refit on all labeled rows for test predictions.
+My current candidate is character TF--IDF with logistic regression at $C=10$. Within my model's three-setting search, it had the highest validation AUROC (0.968976) and took about 8.4 seconds to fit on this PC. Training AUROC was 0.999897, giving a 0.030921 AUROC gap to validation; this suggests caution about relying on near-perfect training fit. At a 0.5 decision threshold it made 31 training errors and 180 validation errors, although Kaggle evaluates AUROC across thresholds. This is a provisional team choice: we still need the teammates' model results on the same 2,000 validation IDs before naming the team's final approach. Once selected, the chosen configuration can be refit on all labeled rows for test predictions.
 
 \section{Effect of training data size (10 points)}
 \textbf{Learning goal:} understand the effect of the number of labeled examples on fitting and generalization. This is an empirical exercise; no formal sample-complexity theory is required.
@@ -176,7 +176,7 @@ My current candidate is character TF--IDF with logistic regression at $C=10$. Wi
 \textbf{Learning goal:} characterize how well the selected model generalizes and where it fails. Use \textbf{labeled validation data}; hidden test labels and hidden domain/generator information are unavailable.
 
 \question{Q4.1 [5 points].}{Compare training and validation AUROC for your final selected model. Is there a gap? What explanations are plausible?}
-\placeholder{Report numbers and discuss, approximately 100 words}
+\textit{Current candidate; update if the team selects another model.} With $C=10$ on the fixed seed-42 split, character TF--IDF logistic regression reached 0.999897 training AUROC and 0.968976 validation AUROC, a gap of 0.030921. At a 0.5 threshold it made 31 errors among 8,000 training passages and 180 among 2,000 validation passages. A sparse representation with up to 150,000 features can fit the training passages very closely, which plausibly contributes to the gap; the measured gap alone does not prove the cause. The two partitions share no exact text passages, though we have not audited near-duplicates or source families. Kaggle test performance remains unknown.
 \question{Q4.2 [5 points].}{Evaluate performance over at least three text-length bins (define the bins), or another observable subgroup available in your data. Explain why you chose the grouping.}
 \begin{tabularx}{\linewidth}{@{}Yrr@{}}\toprule Subgroup / bin & Count & Validation AUROC \\ \midrule \textit{Group 1} & [ ] & [ ] \\ \textit{Group 2} & [ ] & [ ] \\ \textit{Group 3} & [ ] & [ ] \\ \bottomrule\end{tabularx}
 \placeholder{What differences did you observe? About 100 words.}
@@ -202,13 +202,13 @@ My current candidate is character TF--IDF with logistic regression at $C=10$. Wi
 \textbf{Learning goal:} propose and test one improvement beyond the required baseline comparisons. This can be simple: a targeted feature change, alternate regularization scheme, ensemble, different representation, augmentation, or training approach. Sophistication alone does not earn credit.
 
 \question{Q5.1 [3 points].}{What specific question or hypothesis motivated your improvement? What weakness or opportunity did you observe?}
-\placeholder{Approximately 75--125 words}
+The \href{https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing}{Wikipedia field guide on signs of AI writing} describes rhetorical patterns that sometimes occur in AI-generated text, including negative parallelism and lists of three. I asked whether explicit counts of such patterns would add useful information beyond the character TF--IDF features in my baseline. The hypothesis was that a small set of interpretable structural cues could improve validation AUROC when combined with the existing classifier. These patterns are common in human writing too, and the guide's examples may reflect Wikipedia-specific editing practices, so I treated them as testable cues rather than rules for identifying authorship.
 \question{Q5.2 [4 points].}{What exactly did you change? Describe the baseline, the new approach and what you held fixed for a fair comparison.}
-\placeholder{Approximately 100--150 words}
+The baseline was the selected character 3--5-gram TF--IDF logistic model with $C=10$. For the augmented version, I counted matches of \texttt{not ... but}, \texttt{rather than}, and an approximate three-item-list regex in each passage, divided each count by passage length per 100 words, standardized the three features using training rows only, multiplied them by 0.1, and appended them to the TF--IDF matrix. Both models used the same 8,000 training and 2,000 validation rows from seed 42, the same $C=10$, and the same AUROC metric. The cue patterns were applied to raw text; no validation labels entered feature fitting. The list regex is an approximation, not a grammatical parser.
 \question{Q5.3 [4 points].}{What were the measured results?}
-\begin{tabularx}{\linewidth}{@{}YrrY@{}}\toprule Configuration & Val. AUROC & Runtime & Relevant difference \\ \midrule Baseline & [ ] & [ ] & [ ] \\ Improvement & [ ] & [ ] & [ ] \\ \bottomrule\end{tabularx}
+\begin{tabularx}{\linewidth}{@{}YrrY@{}}\toprule Configuration & Val. AUROC & Runtime & Relevant difference \\ \midrule Char TF--IDF baseline & 0.968976 & 8.07 s & 180 errors at 0.5 \\ + wording cues & 0.968779 & 10.42 s & 181 errors at 0.5 \\ \bottomrule\end{tabularx}
 \question{Q5.4 [4 points].}{What did you learn? Did the results support the hypothesis? What limits the conclusion, and what would you try next?}
-\placeholder{Approximately 125--175 words}
+The explicit cues did not support the improvement hypothesis: validation AUROC fell from 0.968976 to 0.968779 (a difference of $-0.000197$), while 0.5-threshold errors rose from 180 to 181. In the training partition, \texttt{not ... but} appeared in 6.1\% of human and 7.8\% of AI passages, and \texttt{rather than} in 1.5\% and 2.9\%; the approximate three-item-list pattern appeared in 53.0\% of human and 45.9\% of AI passages. These overlapping rates help explain why the cues do not reliably identify authorship. The test covers only three approximate regex features, one fixed weight, one $C$, and one validation split. It does not rule out all stylistic features. I would next examine errors by passage type and test better-defined linguistic cues within training-only cross-validation before evaluating a revised model on the held-out set. For now, I retain the simpler baseline.
 
 \section{Code submission, reproducibility and AI assistance (10 points)}
 \textbf{Submission format:} Submit a \textbf{GitHub PR URL} against the course repository. We will inspect the final code and its development history, not just the final snapshot. Do not squash away meaningful intermediate commits before review. Template \href{https://github.com/sekhari/human-or-ai-submissions}{here}.
