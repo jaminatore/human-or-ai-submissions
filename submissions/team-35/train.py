@@ -24,7 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=team_dir / "data" / "q1")
     parser.add_argument("--text-column", default="text")
     parser.add_argument("--label-column", default="label")
-    parser.add_argument("--seed", type=int, default=20261023)
+    parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--validation-size", type=int, default=2000)
     parser.add_argument("--refit-all", action="store_true", help="Save the chosen model fitted on all labeled rows")
     return parser.parse_args()

@@ -61,7 +61,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=team_dir / "data" / "style" / "style_ablation.json")
     parser.add_argument("--text-column", default="text")
     parser.add_argument("--label-column", default="label")
-    parser.add_argument("--seed", type=int, default=20261023)
+    parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--validation-size", type=int, default=2000)
     parser.add_argument("--C", type=float, default=10.0)
     parser.add_argument("--style-weight", type=float, default=0.1)
