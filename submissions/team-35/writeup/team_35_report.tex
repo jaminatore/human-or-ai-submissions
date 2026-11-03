@@ -1,4 +1,5 @@
 \documentclass[11pt,letterpaper]{article}
+\usepackage{graphicx}
 \usepackage[margin=0.86in]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -150,26 +151,32 @@ My current candidate is character TF--IDF with logistic regression at $C=10$. Wi
 \textbf{Learning goal:} understand the effect of the number of labeled examples on fitting and generalization. This is an empirical exercise; no formal sample-complexity theory is required.
 
 \question{Q2.1 [4 points].}{Choose one model configuration. Train it with 500, 1,000, 2,000, 5,000 and 8,000 examples sampled from your 8,000-row training partition. Keep the same validation set and hyperparameters.}
-\begin{tabularx}{\linewidth}{@{}rrrY@{}}\toprule Training rows & Training AUROC & Validation AUROC & Notes (optional) \\ \midrule
-500 & [ ] & [ ] & \\
-1,000 & [ ] & [ ] & \\
-2,000 & [ ] & [ ] & \\
-5,000 & [ ] & [ ] & \\
-8,000 & [ ] & [ ] & \\
-\bottomrule\end{tabularx}
+We held $C=10$ and the 2,000 validation passages fixed. Each smaller subset was sampled with label stratification and seed 42. We fitted a fresh vocabulary and classifier at each size.
+
+\begin{tabular}{rrr}\toprule Rows & Training AUROC & Validation AUROC \\ \midrule
+500 & 1.000000 & 0.904324 \\
+1,000 & 1.000000 & 0.934335 \\
+2,000 & 1.000000 & 0.947913 \\
+5,000 & 0.999998 & 0.962446 \\
+8,000 & 0.999897 & 0.968976 \\ \bottomrule
+\end{tabular}
+
 \question{Q2.2 [3 points].}{Insert a plot of training and validation AUROC versus training-set size.}
-\figplaceholder{learning-curve figure}
+\begin{center}\includegraphics[width=0.85\linewidth]{baseline_learning_curve.pdf}\end{center}
+
 \question{Q2.3 [3 points].}{What does the curve suggest about overfitting, underfitting, and the value of more labeled examples?}
-\placeholder{Approximately 100--150 words}
+Training AUROC stays near 1.0, while validation AUROC rises by 0.0647 between 500 and 8,000 passages. The gap is largest at 500, consistent with overfitting when the model has fewer labeled examples. The training scores show little evidence of underfitting. The gains shrink as the training set grows: the final 3,000 passages add about 0.0065 AUROC. More labels may still help, but this single split and one draw per size cannot tell us how much.
 
 \section{Learning from unlabeled data (5 points)}
 \textbf{Learning goal:} test whether the additional 3,000 unlabeled passages help.
 \question{Q3.1 [2 points].}{Describe one method that uses \texttt{unlabeled.csv} (e.g., self-training, confidence-based pseudo-labeling, clustering, or feature learning). How did you prevent validation-label leakage?}
-\placeholder{Approximately 100 words}
+We trained the baseline on the 8,000 labeled training rows and scored the unlabeled passages. We dropped duplicate unlabeled texts and any exact matches to labeled texts, without consulting validation labels. We assigned pseudo-labels of human for $p\leq0.05$ and AI for $p\geq0.95$, retaining 540 and 572 passages respectively. We refit the same pipeline on all 8,000 training rows plus the 1,112 pseudo-labeled rows. Validation labels were used only to score this comparison.
+
 \question{Q3.2 [2 points].}{Compare against a supervised baseline under the same held-out validation protocol.}
-\begin{tabularx}{\linewidth}{@{}Yp{1.5in}@{}}\toprule Method & Validation AUROC \\ \midrule Supervised only & [ ] \\ With unlabeled data & [ ] \\ \bottomrule\end{tabularx}
+Supervised validation AUROC was 0.968976. With pseudo-labels it was 0.968447, a decrease of 0.000529.
+
 \question{Q3.3 [1 point].}{Did it help? Give a concrete, evidence-based explanation (including possible noise in pseudo-labels).}
-\placeholder{Approximately 100 words}
+This configuration did not improve validation AUROC. Confidence does not guarantee a correct label, and adding the teacher's predictions can reinforce its mistakes. The error analysis includes confidently wrong predictions at these thresholds. We do not know the true labels of the added passages, so label noise is a plausible explanation. One split and one threshold pair do not establish a general effect.
 
 \newpage
 \section{Generalization and error analysis (20 points)}
@@ -178,24 +185,30 @@ My current candidate is character TF--IDF with logistic regression at $C=10$. Wi
 \question{Q4.1 [5 points].}{Compare training and validation AUROC for your final selected model. Is there a gap? What explanations are plausible?}
 \textit{Current candidate; update if the team selects another model.} With $C=10$ on the fixed seed-42 split, character TF--IDF logistic regression reached 0.999897 training AUROC and 0.968976 validation AUROC, a gap of 0.030921. At a 0.5 threshold it made 31 errors among 8,000 training passages and 180 among 2,000 validation passages. A sparse representation with up to 150,000 features can fit the training passages very closely, which plausibly contributes to the gap; the measured gap alone does not prove the cause. The two partitions share no exact text passages, though we have not audited near-duplicates or source families. Kaggle test performance remains unknown.
 \question{Q4.2 [5 points].}{Evaluate performance over at least three text-length bins (define the bins), or another observable subgroup available in your data. Explain why you chose the grouping.}
-\begin{tabularx}{\linewidth}{@{}Yrr@{}}\toprule Subgroup / bin & Count & Validation AUROC \\ \midrule \textit{Group 1} & [ ] & [ ] \\ \textit{Group 2} & [ ] & [ ] \\ \textit{Group 3} & [ ] & [ ] \\ \bottomrule\end{tabularx}
-\placeholder{What differences did you observe? About 100 words.}
+We counted whitespace-delimited words to test whether short passages provide fewer character patterns. The shortest bin has only 63 examples, so its AUROC is less stable.
+\begin{tabular}{lrrr}\toprule Words & Rows & Validation AUROC & Errors at 0.5 \\ \midrule
+Up to 100 & 63 & 0.941327 & 10 \\
+101--200 & 891 & 0.957086 & 91 \\
+More than 200 & 1,046 & 0.979044 & 79 \\ \bottomrule
+\end{tabular}
+
 \question{Q4.3 [5 points].}{Analyze at least \textbf{five false positives and five false negatives} from your held-out validation set. Provide example IDs, predicted probabilities, and short failure hypotheses. Do not paste full passages unless essential.}
-\begin{tabularx}{\linewidth}{@{}p{0.64in}p{0.70in}p{0.98in}Y@{}}\toprule ID & Error type & P(AI) & Possible reason \\ \midrule
-\mbox{[ ]} & FP & [ ] & [ ] \\
-\mbox{[ ]} & FP & [ ] & [ ] \\
-\mbox{[ ]} & FP & [ ] & [ ] \\
-\mbox{[ ]} & FP & [ ] & [ ] \\
-\mbox{[ ]} & FP & [ ] & [ ] \\
-\mbox{[ ]} & FN & [ ] & [ ] \\
-\mbox{[ ]} & FN & [ ] & [ ] \\
-\mbox{[ ]} & FN & [ ] & [ ] \\
-\mbox{[ ]} & FN & [ ] & [ ] \\
-\mbox{[ ]} & FN & [ ] & [ ] \\
-\bottomrule\end{tabularx}
-\smallnote{Define false positive as human text predicted AI; false negative as AI text predicted human. State the decision threshold used for selecting errors (e.g., 0.5).}
+At threshold 0.5 we found 63 human passages predicted AI (FP) and 117 AI passages predicted human (FN). These are the five most confident errors in each direction.
+\begin{tabularx}{\linewidth}{@{}rrrY@{}}\toprule ID & Type & P(AI) & Possible reason \\ \midrule
+5234 & FP & 0.950146 & Structured troubleshooting may resemble a generated technical response. \\
+3671 & FP & 0.882028 & Polished biography uses conventional introductions and credential lists. \\
+3743 & FP & 0.832592 & An orderly plot synopsis may outweigh the informal opening. \\
+4235 & FP & 0.822548 & Repeated second-person phrasing resembles generic advice. \\
+3448 & FP & 0.814544 & A formal definition uses stock technical phrasing. \\
+1524 & FN & 0.010445 & Domain terminology and line breaks resemble a copied research abstract. \\
+9490 & FN & 0.018979 & Abbreviated ingredient quantities resemble a recipe listing. \\
+3062 & FN & 0.024887 & A casual greeting and personal anecdote resemble a forum post. \\
+8986 & FN & 0.035466 & Ingredient lines and parenthetical units resemble a recipe listing. \\
+4600 & FN & 0.062766 & Specific names, dates, and teams resemble an encyclopedia biography. \\ \bottomrule
+\end{tabularx}
+
 \question{Q4.4 [5 points].}{What recurring failure patterns did you identify, and how might you address one of them? Distinguish observed patterns from speculation.}
-\placeholder{Approximately 150 words}
+Two of the five selected false negatives are recipes, and biographies appear in both error directions. Errors also occur in informal and formal prose, so polished wording alone does not explain the mistakes. These examples suggest the model can confuse genre conventions with authorship, but the ten most confident errors cannot establish how common that pattern is. A follow-up could label genres without using authorship, measure error rates by genre on held-out data, and test whether balancing genres within the training labels helps. The length results also motivate checking whether performance still varies by length within each genre.
 
 \newpage
 \section{Open-ended improvements and insights (15 points)}
