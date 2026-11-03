@@ -56,8 +56,9 @@ def evaluate(y: np.ndarray, probability: np.ndarray) -> dict[str, float | int]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--train", type=Path, required=True)
-    parser.add_argument("--output", type=Path, default=Path("data/style/style_ablation.json"))
+    team_dir = Path(__file__).resolve().parent
+    parser.add_argument("--train", type=Path, default=team_dir / "data" / "train.csv")
+    parser.add_argument("--output", type=Path, default=team_dir / "data" / "style" / "style_ablation.json")
     parser.add_argument("--text-column", default="text")
     parser.add_argument("--label-column", default="label")
     parser.add_argument("--seed", type=int, default=20261023)

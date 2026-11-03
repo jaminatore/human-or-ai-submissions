@@ -4,13 +4,15 @@ Kaggle team name: `team 35` (repository folder and branch use `team-35`).
 
 Team members and NetIDs: Zhitong Liu (zl2358). Add any other team members before marking the draft PR ready for review.
 
-## Setup (PowerShell)
+## Shared report draft
 
-Use Python 3.14. Run these commands from `submissions/team-35`:
+The version-controlled LaTeX source is [`writeup/team_35_report.tex`](writeup/team_35_report.tex). Q1 currently contains Zhitong's measured character-model results and marked spaces for the other two team models. Teammates can edit this file on the team branch and contribute through the same pull request. Submit the compiled final PDF to the course portal separately.
+## Setup on Windows
+
+Use Python 3.14. The scripts use the CSV files in this folder's `data/` directory by default, so the scripts accept no command-line arguments (including when launched by VS Code's **Run Python File** button if its terminal starts correctly). Open `submissions/team-35` as the VS Code folder and select your regular Python 3.14 interpreter. Install dependencies into that Python installation if needed:
 
 ```powershell
-py -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+py -m pip install -r requirements.txt
 ```
 
 Place the Kaggle `train.csv` and `test.csv` in `data/`. The repository ignores `data/` and CSV files, so the competition data stays local.
@@ -18,7 +20,7 @@ Place the Kaggle `train.csv` and `test.csv` in `data/`. The repository ignores `
 ## Q1: our character TF-IDF logistic model
 
 ```powershell
-.\.venv\Scripts\python.exe train.py --train data/train.csv --output-dir data/q1
+py train.py
 ```
 
 Our team contribution is one model: character 3–5-gram TF-IDF with logistic regression. The script reserves one stratified 2,000-row validation set (seed `20261023`) and keeps it fixed while searching `C` over `{0.1, 1, 10}`. It selects `C` by validation AUROC. `data/q1/q1_search.csv` records every fit, including training and validation AUROC, error counts at a 0.5 threshold, and fit time. `q1_summary.json` records the split and selected setting. Other team members will provide the other approaches for the final Q1 comparison.
@@ -38,7 +40,7 @@ These results use 8,000 training rows and 2,000 validation rows, stratified 4,00
 The [Wikipedia field guide on signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing) suggests negative parallelism and the rule of three as possible cues. We tested whether counts of `not ... but`, `rather than`, and approximate three-item lists improve our character model. These regex counts are divided by passage length (per 100 words), standardized using training rows only, and appended to the TF-IDF features with a fixed weight of `0.1`. Both runs use the same 8,000/2,000 split and logistic `C=10`.
 
 ```powershell
-.\.venv\Scripts\python.exe style_experiment.py --train data/train.csv --output data/style/style_ablation.json
+py style_experiment.py
 ```
 
 | Configuration | Train AUROC | Validation AUROC | Validation errors at 0.5 | Fit time (s) |
@@ -53,11 +55,13 @@ The added cues did not improve validation AUROC, the competition metric, so the 
 After reviewing the validation results, refit the selected approach on all 10,000 labeled rows and write 3,000 test probabilities:
 
 ```powershell
-.\.venv\Scripts\python.exe train.py --train data/train.csv --output-dir data/q1 --refit-all
-.\.venv\Scripts\python.exe predict.py --test data/test.csv --model data/q1/model.joblib --out data/submission.csv
+py train.py --refit-all
+py predict.py
 ```
 
 The CSV columns are `id,label`, where `label` is the predicted probability that the passage is AI-generated. The file remains local until a team member reviews and uploads it. Q2–Q5 experiments are not part of this Q1 script yet.
+
+Running `train.py` again with unchanged code, data, seed, and package versions reproduces the same AUROC and error counts; measured fit time can change with system load. It overwrites the local Q1 result files, and updates `model.joblib` only when `--refit-all` is supplied. Running `predict.py` again overwrites the local `submission.csv` with the same probabilities when the saved model and test data are unchanged. All of these outputs are Git-ignored.
 
 ## AI assistance
 

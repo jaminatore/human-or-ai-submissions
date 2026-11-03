@@ -11,9 +11,10 @@ import pandas as pd
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--test", type=Path, required=True)
-    parser.add_argument("--model", type=Path, default=Path("data/q1/model.joblib"))
-    parser.add_argument("--out", type=Path, default=Path("data/submission.csv"))
+    team_dir = Path(__file__).resolve().parent
+    parser.add_argument("--test", type=Path, default=team_dir / "data" / "test.csv")
+    parser.add_argument("--model", type=Path, default=team_dir / "data" / "q1" / "model.joblib")
+    parser.add_argument("--out", type=Path, default=team_dir / "data" / "submission.csv")
     parser.add_argument("--text-column", default="text")
     parser.add_argument("--id-column", default="id")
     args = parser.parse_args()

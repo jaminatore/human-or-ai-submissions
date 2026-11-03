@@ -19,8 +19,9 @@ from sklearn.pipeline import Pipeline
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--train", type=Path, required=True)
-    parser.add_argument("--output-dir", type=Path, default=Path("data/q1"))
+    team_dir = Path(__file__).resolve().parent
+    parser.add_argument("--train", type=Path, default=team_dir / "data" / "train.csv")
+    parser.add_argument("--output-dir", type=Path, default=team_dir / "data" / "q1")
     parser.add_argument("--text-column", default="text")
     parser.add_argument("--label-column", default="label")
     parser.add_argument("--seed", type=int, default=20261023)
