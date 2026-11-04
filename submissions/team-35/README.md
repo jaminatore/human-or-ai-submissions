@@ -7,7 +7,7 @@ Team members and NetIDs: Zhitong Liu (zl2358). Add any other team members before
 ## Shared report draft
 
 The version-controlled LaTeX source is [`writeup/team_35_report.tex`](writeup/team_35_report.tex). Q1 contains Zhitong's measured character-model results and marked spaces for the other two team models. `writeup/seed42_results.json` records the exact Q1 search and wording-cue ablation measurements without including competition passages. Teammates can edit the LaTeX source on the team branch and contribute through the same pull request. Submit the compiled final PDF to the course portal separately.
-## Setup on Windows
+## Setup
 
 Use Python 3.14. The scripts use the CSV files in this folder's `data/` directory by default, so the scripts accept no command-line arguments (including when launched by VS Code's **Run Python File** button if its terminal starts correctly). Open `submissions/team-35` as the VS Code folder and select your regular Python 3.14 interpreter. Install dependencies into that Python installation if needed:
 
@@ -16,6 +16,8 @@ py -m pip install -r requirements.txt
 ```
 
 Place the Kaggle `train.csv` and `test.csv` in `data/`. The repository ignores `data/` and CSV files, so the competition data stays local.
+
+On macOS, from this team directory, the equivalent setup is `python3 -m venv .venv`, followed by `.venv/bin/python -m pip install -r requirements.txt`. Run scripts with `.venv/bin/python` in place of `py` in the commands below.
 
 ## Q1: our character TF-IDF logistic model
 
@@ -34,6 +36,16 @@ Our team contribution is one model: character 3–5-gram TF-IDF with logistic re
 | C=10 | 0.999897 | 0.968976 | 31 | 180 |
 
 These results use 8,000 training rows and 2,000 validation rows, stratified 4,000/4,000 and 1,000/1,000 by class. They use seed `42`, matching the teammate notebook's `train_test_split` call on the same CSV row order. There were no exact text passages shared between the partitions. We chose `C=10` by validation AUROC. Since the same validation set selected `C`, its score may be somewhat optimistic.
+
+### Additional Q1 comparison, pending data run
+
+`q1_comparison.py` adds two distinct approaches to the existing character model: (A) 30 hand-designed writing-style features with a logistic classifier and Adam optimizer implemented in NumPy, and (B) word unigram/bigram TF-IDF with logistic regression. It also refits the existing character model (C) as a split-alignment check. All three use the same seed-42 stratified 8,000/2,000 partition as `train.py`. A searches L2 strengths `{0.001, 0.01, 0.1}`; B searches logistic `C` values `{0.1, 1, 10}`. Those two searches use three-fold cross-validation on the training rows only. The script flags text overlap across partitions and writes metrics and validation probabilities to `data/q1-comparison/`.
+
+```powershell
+py q1_comparison.py
+```
+
+On macOS, run `.venv/bin/python q1_comparison.py`. The new approaches have **no measured competition results yet** because their experiment requires the course `train.csv`. Replace the pending Q1 report cells only after reviewing the generated metrics. The prior character baseline's reported scores come from its separate completed run.
 
 ## Exploratory improvement: explicit wording cues
 
