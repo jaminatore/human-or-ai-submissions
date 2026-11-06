@@ -1,3 +1,5 @@
 catboost_info/
 !models/
 !models/**
+graphify-out/
+artifacts/
