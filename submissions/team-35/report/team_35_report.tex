@@ -114,7 +114,7 @@ Code submission and GitHub PR history & 10 \\
 
 \section{Team information and model summary}
 \question{Q0.1 [0 points].}{List team members and their main contributions.}
-Team members: Zhitong Liu (zl2358), Sorathorn Thongpitukthavorn (st2329), and Keyan Miao (km2299). Zhitong developed the character TF--IDF baseline, learning-curve and pseudo-labeling experiments, a wording-cue ablation, and the v3 holdout error analysis. Plum developed the multi-view models and v3 ensemble.
+Team members: Zhitong Liu (zl2358), Sorathorn Thongpitukthavorn (st2329), and Keyan Miao (km2299). Zhitong developed the character TF--IDF baseline, learning-curve and pseudo-labeling experiments, a wording-cue ablation, and the v3 holdout error analysis. Sorathorn (Plum) developed the multi-view models and v3 ensemble. Keyan built a reproducible word TF--IDF baseline script with checks for missing values, duplicates, and labels. He compared logistic regression, a linear SVM, and multinomial naive Bayes, and used cross-validation to tune $C$.
 \question{Q0.2 [0 points].}{Summarize your final approach in 3--5 sentences. What is the overall pipeline from raw text to probability?}
 Our intended final Kaggle submission uses the v3 ensemble. It turns each passage into several views: word and character patterns, a version that masks topic words, and measurements of writing style and formatting. Nine classifiers combine those views into an AI-authorship probability. A second stage adds high-confidence pseudo-labeled passages from the supplied unlabeled and test files, then blends its predictions with the first stage. The final output is a probability for each test ID; hidden test labels are never used for training.
 \question{Q0.3 [0 points].}{Record your final scores (enter private score only once it is revealed).}
@@ -249,13 +249,32 @@ The final v3 public Kaggle score was lower than its random holdout score. We wou
 \textbf{Learning goal:} propose and test one improvement beyond the required baseline comparisons. This can be simple: a targeted feature change, alternate regularization scheme, ensemble, different representation, augmentation, or training approach. Sophistication alone does not earn credit.
 
 \question{Q5.1 [3 points].}{What specific question or hypothesis motivated your improvement? What weakness or opportunity did you observe?}
-The \href{https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing}{Wikipedia field guide on signs of AI writing} describes patterns sometimes seen in AI-generated text, such as \emph{not X but Y} phrasing and lists of three items. We asked whether counting a few such patterns would improve Model F beyond its existing character-pattern features. These cues would also be easy to inspect when explaining a prediction. Human writers use them too, and the guide focuses on Wikipedia, so we treated them as a possible extra signal rather than a rule for deciding who wrote a passage.
+A later version of our nine-model ensemble made 20 mistakes on a 2,000-passage holdout set: it wrongly flagged six human passages as AI and missed 14 AI passages. This is a separate evaluation from the v3 run in Section 6.
+\newline
+
+Some missed AI passages began with Markdown quote marks, while some human lists of names looked repetitive. We also expected poetry to be difficult because its short lines and rhyme differ from ordinary prose. Our question was simple: Could targeted checks for these patterns improve the ensemble's predictions?
+
 \question{Q5.2 [4 points].}{What exactly did you change? Describe the baseline, the new approach and what you held fixed for a fair comparison.}
-Our baseline was Model F: logistic regression on three- to five-character TF--IDF patterns with $C=10$. For the new version, we also counted three wording cues in each passage: \texttt{not ... but}, \texttt{rather than}, and an approximate pattern for a three-item list. We turned each count into a rate per 100 words, standardized the rates using training rows only, multiplied them by 0.1, and added them to the original character features. Both versions used the same 8,000 training and 2,000 validation passages (seed 42), the same $C$, and the same AUROC measure. We searched for cues in raw text and used no validation labels when building features. The list pattern is a rough text match, not a full grammar analysis.
+We started with the same ensemble and its existing probabilities. Then we tried three specific ideas: remove leading Markdown quote marks from lines, measure whether repeated phrases contain capitalized names, and measure line length and rough rhyme patterns in verse.
+\newline
+
+For the exported test predictions, we raised some scores for quote-prefixed technical passages and adjusted some verse scores using the rhyme and line-length checks. We did not retrain the ensemble with these new features. The holdout demonstration also changed scores for specific IDs already known to be errors, so it is useful for exploring the idea but is not a fair test on unseen passages.
+
 \question{Q5.3 [4 points].}{What were the measured results?}
-\begin{tabularx}{\linewidth}{@{}YrrY@{}}\toprule Configuration & Val. AUROC & Runtime & Relevant difference \\ \midrule Char TF--IDF baseline & 0.968976 & 8.07 s & 180 errors at 0.5 \\ + wording cues & 0.968779 & 10.42 s & 181 errors at 0.5 \\ \bottomrule\end{tabularx}
+\begin{tabularx}{\linewidth}{@{}Yrrr@{}}\toprule
+Step & Holdout AUROC & Errors at 0.50 & Kaggle public AUROC \\ \midrule
+Original ensemble & 0.999449 & 20 & 0.98629 \\
+Edits to known holdout errors & 0.999506 & 12 & --- \\
+Exported test candidate & --- & --- & 0.98640 \\
+\bottomrule\end{tabularx}
+
+The holdout numbers come from the notebook's executed output. The public scores are recorded in the team's model results log. The holdout change is a post hoc diagnostic because the edited IDs were chosen after their errors were known; the Kaggle score measures a separate test-file candidate.
+
 \question{Q5.4 [4 points].}{What did you learn? Did the results support the hypothesis? What limits the conclusion, and what would you try next?}
-The extra cues did not help in this test. Validation AUROC slipped from 0.968976 to 0.968779, a difference of $-0.000197$, and errors at the 0.5 cutoff rose from 180 to 181. In the training data, \texttt{not ... but} appeared in 6.1\% of human and 7.8\% of AI passages; \texttt{rather than} appeared in 1.5\% and 2.9\%; and the rough three-item-list pattern appeared in 53.0\% and 45.9\%. The rates overlap across the two classes, which may explain why these cues added little. We tested only three rough patterns, one feature weight, one $C$ value, and one validation split, so this result does not rule out other writing-style features. Next, we would inspect errors by passage type and try clearer linguistic cues with cross-validation inside the training set before checking a revised model on held-out passages. We kept Model F simple; the final v3 submission was chosen in separate experiments.
+The error-directed candidate improved the recorded public score from 0.98629 to 0.98640, a gain of 0.00011. That suggests the targeted checks may help, but it does not tell us which check mattered. We cannot treat the drop from 20 to 12 holdout errors as evidence of generalization because those predictions were adjusted after we inspected the mistakes.
+\newline
+
+The public leaderboard also covers only part of the test data. Next, we would define the rules without looking at the evaluation IDs, apply them to every passage in a fresh holdout or cross-validation fold, and test quote-prefixed text and verse separately before relying on the change.
 \section{Code submission, reproducibility and AI assistance (10 points)}
 \textbf{Submission format:} Submit a \textbf{GitHub PR URL} against the course repository. We will inspect the final code and its development history, not just the final snapshot. Do not squash away meaningful intermediate commits before review. Template \href{https://github.com/sekhari/human-or-ai-submissions}{here}.
 
