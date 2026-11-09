@@ -11,23 +11,30 @@
 
 ## 1. Executive Summary & Current Standings
 
-Across iterative architectural iterations, feature engineering, and model exploration, our best-performing submissions on the Kaggle public leaderboard are:
+Across iterative architectural iterations, feature engineering, and model exploration, our submissions on the Kaggle public leaderboard are:
 
-1. **`submission_final_model_improvements.csv`** — **`0.98629`** (Top Result to Date)
+1. **`submission_error_directed_refinement.csv`** — **`0.98640`** (**CURRENT BEST**)
+   - *Originating Notebook*: `error_directed_model_refinement.ipynb`
+   - *Architecture*: Error-directed refinement of the winning 9-specialist recipe addressing the 20 holdout misclassifications: markdown blockquote unmasking (`> `), proper-noun repetition differentiation, and verse cadence / rhyme regularity modeling for the 432 test poems.
+2. **`submission_final_model_improvements.csv`** — **`0.98629`** (Previous Benchmark)
+   - *Originating Notebook*: `final_model_improvements.ipynb`
    - *Architecture*: 9-Specialist Two-Tier Hybrid Ensemble (Pure Lexical/LM View + Structural View) combining Regularized Logistic Regression, Calibrated LinearSVC, Dual Word/Char N-gram LMs, and GBDT Triad (LightGBM, CatBoost, XGBoost) trained on all 10,000 labeled samples.
-2. **`submission_best_recipe_seedavg_3.csv`** — **`0.98604`** (Variance-Reduction Replication)
-   - *Architecture*: Exact 3-seed arithmetic average ($\text{seeds} \in \{42, 43, 44\}$) of the winning 9-specialist recipe.
-3. **Robustness-Constrained Candidates (`candidate_01`, `candidate_04`)** — **`0.98379`**, **`0.98363`**
-   - *Architecture*: Models heavily regularized against synthetic formatting perturbations (`canonical`, `wrap60`, `wrap90`).
+3. **`submission_best_recipe_seedavg_3.csv`** — **`0.98604`** (Variance-Reduction Experiment — *Lower Score*)
+   - *Originating Notebook*: `best_recipe_seed_average.ipynb`
+   - *Architecture*: Exact 3-seed arithmetic average ($\text{seeds} \in \{42, 43, 44\}$) of the 0.98629 recipe. It scored slightly lower than the single-seed fit ($-0.00025$), demonstrating that random seed variance was not the performance bottleneck.
+4. **Robustness-Constrained Candidates (`candidate_01`, `candidate_04`)** — **`0.98379`**, **`0.98363`**
+   - *Originating Notebook*: `further_model_tuning.ipynb`
+   - *Architecture*: Models heavily regularized against synthetic formatting perturbations (`canonical`, `wrap60`, `wrap90`). Over-regularization degraded discriminative signal on Kaggle.
 
 ```
-Kaggle AUROC Progress:
-  0.86800  [Kaggle Baseline Benchmark]
+Chronological Kaggle Submissions & Leaderboard Progression:
+  0.86800  [Kaggle Baseline Benchmark (Course assignment reference)]
   0.93670  [Local Reference Baseline: Word TF-IDF + LogReg]
   0.97430  [Multi-View Linear Baseline]
-  0.98379  [Candidate 01: Formatting-Stress Robustness]
-  0.98604  [3-Seed Average of Best Recipe]
-  0.98629  [submission_final_model_improvements.csv - CURRENT BEST]
+  0.98379  [candidate_01 (further_model_tuning.ipynb - formatting stress candidate)]
+  0.98629  [submission_final_model_improvements.csv (final_model_improvements.ipynb)]
+  0.98604  [submission_best_recipe_seedavg_3.csv (best_recipe_seed_average.ipynb) - Lower score]
+  0.98640  [submission_error_directed_refinement.csv (error_directed_model_refinement.ipynb) - CURRENT BEST]
 ```
 
 ---
