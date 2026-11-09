@@ -279,11 +279,26 @@ The public leaderboard also covers only part of the test data. Next, we would de
 \textbf{Submission format:} Submit a \textbf{GitHub PR URL} against the course repository. We will inspect the final code and its development history, not just the final snapshot. Do not squash away meaningful intermediate commits before review. Template \href{https://github.com/sekhari/human-or-ai-submissions}{here}.
 
 \question{Q6.1 [5 points].}{Provide the PR URL, the entrypoint for training/evaluation, and the command used to generate \texttt{submission.csv}. State dependencies and random seeds.}
-\placeholder{PR URL; commands; environment; output path}
+Our current fork review PR is \href{https://github.com/jaminatore/human-or-ai-submissions/pull/10}{PR \#10}. The required course-repository PR URL is pending the team's final submission. To reproduce the final CSV, use Python 3.12 on CPU and place \texttt{train.csv}, \texttt{unlabeled.csv}, \texttt{test.csv}, and \texttt{sample\_submission.csv} in the repository's \texttt{data/} directory. From the repository root, run:
+\begin{verbatim}
+python -m pip install -r submissions/team-35/requirements.txt \
+  nbconvert ipykernel
+cd submissions/team-35
+jupyter nbconvert --to notebook --execute --inplace \
+  --ExecutePreprocessor.timeout=-1 final_model_improvements.ipynb
+jupyter nbconvert --to notebook --execute --inplace \
+  --ExecutePreprocessor.timeout=-1 error_directed_model_refinement.ipynb
+cp submission_error_directed_refinement.csv submission.csv
+\end{verbatim}
+The first notebook creates the base predictions and artifacts needed by the second. The last command names the refined output \texttt{submission.csv}; the first notebook's own CSV is an earlier model. The configuration uses seed 42 for the main split and seed 43 for a secondary check. Competition data and generated CSVs are kept out of Git.
 \question{Q6.2 [3 points].}{Give two or three examples of changes you made during development. Link to relevant commits or PR discussion and briefly explain what the experiments taught you.}
-\placeholder{Commit links and brief notes}
+\begin{itemize}
+\item \href{https://github.com/jaminatore/human-or-ai-submissions/commit/5e8256c}{\texttt{5e8256c}}: We measured a character-pattern baseline at several training sizes. More labeled passages improved validation AUROC, while adding confident pseudo-labels did not help in that separate test.
+\item \href{https://github.com/jaminatore/human-or-ai-submissions/commit/8930188}{\texttt{8930188}}: More model views and leakage checks raised public AUROC from v3's 0.98552 to 0.98629, though the test gap remained.
+\item \href{https://github.com/jaminatore/human-or-ai-submissions/commit/c7f2ca6}{\texttt{c7f2ca6}}: Quote and verse adjustments reached 0.98640 publicly. The ID-edited holdout comparison was only diagnostic.
+\end{itemize}
 \question{Q6.3 [2 points].}{How did you use AI tools (such as Claude, ChatGPT or Copilot) for code, debugging, analysis or writing? What did you verify or modify yourself?}
-\placeholder{Short, honest disclosure. Full prompt transcripts are not required.}
+We used AI assistants, including ChatGPT/Codex, to brainstorm approaches, draft code, suggest improvements, and help format and organize files and report text. The team chose the direction of the experiments, reviewed and changed suggested code and wording, checked the reasoning, and validated the reported results. We compared numerical claims with saved notebook outputs and Kaggle score records rather than treating AI suggestions as measurements.
 
 \textbf{AI policy.} You may use AI assistants for coding, debugging, explanations, brainstorming, and editing. We expect each team to exercise its own judgment, run experiments, check outputs, and understand its submitted approach. Sending the entire assignment to an AI tool and submitting its unverified output without meaningful involvement does not satisfy the objectives of this project. We will use the PR history, reproducible experiments and report together as evidence of engagement. \emph{Commit counts and the presence of AI-generated code are not themselves grading criteria.} Do not fabricate results or retrieve hidden test labels.
 
