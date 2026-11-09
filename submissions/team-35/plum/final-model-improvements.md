@@ -13,12 +13,12 @@
 
 Across iterative architectural iterations, feature engineering, and model exploration, our submissions on the Kaggle public leaderboard are:
 
-1. **`submission_transformer_hybrid.csv`** — **`0.99954` Holdout AUROC / Exported Candidate** (**NEW GRAND HYBRID CAPSTONE**)
-   - *Originating Notebook*: `transformer_hybrid_ensemble.ipynb`
-   - *Architecture*: Capstone Improvement for Report Section 7 (Open-Ended Improvements). Fuses the winning `0.98640` GBDT ensemble with a fine-tuned contextual language model (`distilbert-base-uncased`, 66M parameters) accelerated via DirectML on an NVIDIA GeForce RTX 5060 Laptop GPU. Resolves 70% of GBDT holdout misclassifications and provides deep literary semantic awareness to correct false-positive classifications on the 432 test poems.
-2. **`submission_error_directed_refinement.csv`** — **`0.98640`** (**CURRENT KAGGLE BEST**)
+1. **`submission_error_directed_refinement.csv`** — **`0.98640`** (**WINNING BEST KAGGLE SUBMISSION**)
    - *Originating Notebook*: `error_directed_model_refinement.ipynb`
    - *Architecture*: Error-directed refinement of the winning 9-specialist recipe addressing the 20 holdout misclassifications: markdown blockquote unmasking (`> `), proper-noun repetition differentiation, and verse cadence / rhyme regularity modeling for the 432 test poems.
+2. **`submission_transformer_hybrid.csv`** — **`0.98575`** (Experiment F: Capstone Contextual Hybridization — *Lower Score*)
+   - *Originating Notebook*: `transformer_hybrid_ensemble.ipynb`
+   - *Architecture*: Capstone Improvement for Report Section 7 (Open-Ended Improvements). Fuses the winning `0.98640` GBDT ensemble with fine-tuned `distilbert-base-uncased` (66M parameters). While improving in-domain holdout AUROC to `0.99954` and resolving 70% of holdout errors, on the Kaggle public leaderboard it scored `0.98575` (-0.00065). The extreme logit bimodality of the transformer displaced rank calibrations on 21.2% of borderline test passages where GBDT n-grams were more accurate.
 3. **`submission_final_model_improvements.csv`** — **`0.98629`** (Previous Benchmark)
    - *Originating Notebook*: `final_model_improvements.ipynb`
    - *Architecture*: 9-Specialist Two-Tier Hybrid Ensemble (Pure Lexical/LM View + Structural View) combining Regularized Logistic Regression, Calibrated LinearSVC, Dual Word/Char N-gram LMs, and GBDT Triad (LightGBM, CatBoost, XGBoost) trained on all 10,000 labeled samples.
@@ -38,7 +38,7 @@ Chronological Kaggle Submissions & Leaderboard Progression:
   0.98629  [submission_final_model_improvements.csv (final_model_improvements.ipynb)]
   0.98604  [submission_best_recipe_seedavg_3.csv (best_recipe_seed_average.ipynb) - Lower score]
   0.98640  [submission_error_directed_refinement.csv (error_directed_model_refinement.ipynb) - Current Best]
-  Exported [submission_transformer_hybrid.csv (transformer_hybrid_ensemble.ipynb) - Capstone Hybrid]
+  0.98575  [submission_transformer_hybrid.csv (transformer_hybrid_ensemble.ipynb) - Capstone Hybrid, -0.00065]
 ```
 
 ---
@@ -199,7 +199,7 @@ In `validation_gap_diagnosis.ipynb`, a deep structural audit of the dataset reve
 | `error_directed_model_refinement.ipynb` | Autopsy of 20 holdout errors, quote unmasking, rhyme features | Val AUROC: **0.99951**, 40% error drop | Committed (Kaggle: **0.98640**) |
 | `submission_error_directed_refinement.csv` | Error-directed refinement submission candidate | Kaggle Public LB: **0.98640** | Current Kaggle Best |
 | `transformer_hybrid_ensemble.ipynb` | Capstone Improvement (Section 7): DistilBERT fine-tuning + GBDT fusion | Holdout AUROC: **0.99954**, fixes 70% GBDT errors | Committed (Grand Hybrid) |
-| `submission_transformer_hybrid.csv` | Grand Hybrid test submission ($0.92 \cdot \text{GBDT} + 0.08 \cdot \text{BERT}$) | Holdout AUROC: **0.99954** | Exported Candidate |
+| `submission_transformer_hybrid.csv` | Grand Hybrid test submission ($0.92 \cdot \text{GBDT} + 0.08 \cdot \text{BERT}$) | Kaggle: **0.98575** / Holdout: 0.99954 | Completed Experiment |
 
 ---
 

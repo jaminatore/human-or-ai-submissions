@@ -401,18 +401,18 @@ We implemented a contextual language model hybridization pipeline:
 \midrule
 Baseline (Refined 9-Specialist GBDT) & 0.99945 & 18.2 min & Pure n-gram frequencies; blind to poetic meter \& narrative flow; Kaggle LB 0.98640. \\
 Standalone DistilBERT (Contextual LM) & 0.98556 & 12.7 min & Fine-tuned transformer; resolves 70\% of GBDT holdout misclassifications. \\
-Grand Hybrid Ensemble (GBDT + DistilBERT) & \textbf{0.99954} & 30.9 min & Optimal probability fusion ($0.92\text{ GBDT} + 0.08\text{ BERT}$); corrects test poetry false positives. \\
+Grand Hybrid Ensemble (GBDT + DistilBERT) & \textbf{0.99954} & 30.9 min & Optimal holdout blend ($0.92\text{ GBDT} + 0.08\text{ BERT}$); Kaggle LB 0.98575 (-0.00065). \\
 \bottomrule
 \end{tabularx}
 
 \vspace{6pt}
 \textbf{Q5.4 [4 points].} What did you learn? Did the results support the hypothesis? What limits the conclusion, and what would you try next?
 
-The results strongly supported our hypothesis across two empirical axes:
+The experiment yielded deep pedagogical insights into the trade-offs between classical ML and pre-trained transformers:
 \begin{itemize}[leftmargin=*,itemsep=1pt]
-    \item \textbf{Holdout Error Autopsy}: Standalone DistilBERT resolved 14 of the 20 misclassifications ($70.0\%$) committed by the GBDT baseline on the official 2,000-row holdout set, specifically rescuing misclassified book summaries (ID 1362: GBDT $0.049 \to$ BERT $0.699$), recipe imitations (IDs 5498, 9298), academic abstracts (IDs 4951, 5010), and social narratives (IDs 4290, 3062).
-    \item \textbf{Test Domain Adaptation}: On the 3,000 test passages, DistilBERT drastically corrected GBDT false positives on classic human poems. For example, test ID 13058 (a Kenneth Patchen eulogy) and ID 13491 (a frost-kissed dawn poem), which GBDT assigned $\hat{P} = 0.9950$ (AI), were assigned $\hat{P} = 0.0084$ and $0.0047$ (Human) by DistilBERT, reducing their percentile rank from $0.93$ to $0.85$.
-    \item \textbf{Limitations \& Next Steps}: DistilBERT was truncated to sequence length 256 due to GPU memory constraints. Future extensions would explore DeBERTa-v3 or RoBERTa with LoRA parameter-efficient fine-tuning on length 512, combined with domain-adversarial reweighting.
+    \item \textbf{Hypothesis Evaluation}: The hypothesis was partially supported locally but failed to improve the Kaggle leaderboard: while DistilBERT improved in-domain holdout AUROC from $0.99945 \to 0.99954$ and resolved $14 / 20$ holdout errors ($70\%$), on the Kaggle public leaderboard the hybrid score dropped from \textbf{0.98640} to \textbf{0.98575} ($-0.00065$).
+    \item \textbf{Diagnostic Autopsy of Test Underperformance}: Analysis revealed that DistilBERT's softmax probabilities are heavily bimodal ($75\%$ of samples $\ge 0.997$ or $\le 0.025$). Blending shifted $989 / 3,000$ test passages by over $100$ rank positions ($21.2\%$ decision boundary disagreement). On standard in-domain text ($71.7\%$ of the test set), our GBDT ensemble's 250,000 subword n-grams and generative LMs captured subtle statistical transition artifacts that a 2-epoch transformer smoothed over.
+    \item \textbf{Final Selected Submission}: Consequently, we retain our classical GBDT model (\path{submission_error_directed_refinement.csv}, \textbf{0.98640}) as our official winning competition submission. Future work would require temperature-scaled logit calibration and length-512 fine-tuning to prevent rank distortion.
 \end{itemize}
 
 \vspace{12pt}
@@ -428,10 +428,10 @@ The results strongly supported our hypothesis across two empirical axes:
     \item \textbf{Repository \& PR URL}: \texttt{https://github.com/ct-aml/aml2026-human-or-ai/pull/35} (branch: \texttt{model-improvements})
     \item \textbf{Primary Executable Entrypoints}:
     \begin{enumerate}
-        \item Classical Best Model: \texttt{submissions/team-35/plum/error\_directed\_model\_refinement.ipynb}
-        \item Capstone Hybrid Model: \texttt{submissions/team-35/plum/transformer\_hybrid\_ensemble.ipynb}
+        \item Classical Best Model: \path{submissions/team-35/plum/error_directed_model_refinement.ipynb}
+        \item Capstone Hybrid Model: \path{submissions/team-35/plum/transformer_hybrid_ensemble.ipynb}
     \end{enumerate}
-    \item \textbf{Execution Command}: Open and execute \texttt{transformer\_hybrid\_ensemble.ipynb} end-to-end via JupyterLab or VSCode. Output file: \texttt{submissions/team-35/plum/submission\_transformer\_hybrid.csv}.
+    \item \textbf{Execution Command}: Open and execute \texttt{transformer\_hybrid\_ensemble.ipynb} end-to-end via JupyterLab or VSCode. Output file: \path{submissions/team-35/plum/submission_transformer_hybrid.csv}.
     \item \textbf{Dependencies \& Hardware}: Python 3.12, \texttt{torch==2.4.1}, \texttt{torch-directml==0.2.5}, \texttt{transformers==4.46.3}, \texttt{scikit-learn==1.9.1}, \texttt{lightgbm==4.6.0}, \texttt{catboost==1.2.10}, \texttt{xgboost==3.1.1}, \texttt{pandas==3.1.1}. Random seed: pinned to \texttt{42} across all operations.
 \end{itemize}
 
