@@ -114,7 +114,11 @@ Code submission and GitHub PR history & 10 \\
 
 \section{Team information and model summary}
 \question{Q0.1 [0 points].}{List team members and their main contributions.}
+<<<<<<< HEAD
 Team members: Zhitong Liu (zl2358), Sorathorn Thongpitukthavorn (st2329), and Keyan Miao (km2299). Zhitong developed the character TF--IDF baseline, learning-curve and pseudo-labeling experiments, a wording-cue ablation, and the v3 holdout error analysis. Sorathorn (Plum) developed the multi-view models and v3 ensemble. Keyan built a reproducible word TF--IDF baseline script with checks for missing values, duplicates, and labels; she evaluated logistic regression, linear SVM, and naive Bayes, using cross-validation to tune $C$.
+=======
+Team members: Zhitong Liu (zl2358), Sorathorn Thongpitukthavorn (st2329), and Keyan Miao (km2299). Zhitong developed the character TF--IDF baseline, learning-curve and pseudo-labeling experiments, a wording-cue ablation, and the v3 holdout error analysis. Sorathorn (Plum) developed the multi-view models and v3 ensemble. Keyan built a reproducible word TF--IDF baseline script with checks for missing values, duplicates, and labels. She compared logistic regression, a linear SVM, and multinomial naive Bayes, and used cross-validation to tune $C$.
+>>>>>>> ffa5f8243b0aed12f1313726c216310305bea08f
 \question{Q0.2 [0 points].}{Summarize your final approach in 3--5 sentences. What is the overall pipeline from raw text to probability?}
 Our final Kaggle submission builds on v3 but uses the later 9 specialist ensemble. It turns each passage into word, character, topic masked, writing style, and language model views, then combines the specialists' AI probabilities.
 
