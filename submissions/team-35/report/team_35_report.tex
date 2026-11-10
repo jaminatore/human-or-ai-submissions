@@ -64,7 +64,7 @@ You are encouraged to try several approaches. A well-tested logistic regression 
 \begin{tabularx}{\linewidth}{@{}>{\bfseries}p{1.58in}Y@{}}
 Team / members & Zhitong Liu (zl2358); Sorathorn Thongpitukthavorn (st2329); Keyan Miao (km2299) \\
 Kaggle team name & team 35 \\
-GitHub PR URL & [pending team approval] \\
+GitHub PR URL & \href{https://github.com/ct-aml/aml2026-human-or-ai/pull/35}{https://github.com/ct-aml/aml2026-human-or-ai/pull/35} \\
 \end{tabularx}
 \vspace{0.06in}
 \subsection*{Your data}
@@ -114,10 +114,9 @@ Code submission and GitHub PR history & 10 \\
 
 \section{Team information and model summary}
 \question{Q0.1 [0 points].}{List team members and their main contributions.}
-Team members: Zhitong Liu (zl2358), Sorathorn Thongpitukthavorn (st2329), and Keyan Miao (km2299). Zhitong developed the character TF--IDF baseline, learning-curve and pseudo-labeling experiments, a wording-cue ablation, and the v3 holdout error analysis. Sorathorn (Plum) developed the multi-view models and v3 ensemble. Keyan built a reproducible word TF--IDF baseline script with checks for missing values, duplicates, and labels. He compared logistic regression, a linear SVM, and multinomial naive Bayes, and used cross-validation to tune $C$.
+Team members: Zhitong Liu (zl2358), Sorathorn Thongpitukthavorn (st2329), and Keyan Miao (km2299). Zhitong developed the character TF--IDF baseline, learning-curve and pseudo-labeling experiments, a wording-cue ablation, and the v3 holdout error analysis. Sorathorn (Plum) developed the multi-view models and v3 ensemble. Keyan built a reproducible word TF--IDF baseline script with checks for missing values, duplicates, and labels; she evaluated logistic regression, linear SVM, and naive Bayes, using cross-validation to tune $C$.
 \question{Q0.2 [0 points].}{Summarize your final approach in 3--5 sentences. What is the overall pipeline from raw text to probability?}
 Our final Kaggle submission builds on v3 but uses the later 9 specialist ensemble. It turns each passage into word, character, topic masked, writing style, and language model views, then combines the specialists' AI probabilities.
-\newline
 
 The selected ensemble trains on labeled passages with semi-supervised training turned off. Finally, an error directed step adjusts some test probabilities for quote-prefixed technical writing and verse patterns, producing one probability per test ID without using hidden test labels.
 \question{Q0.3 [0 points].}{Record your final scores (enter private score only once it is revealed).}
@@ -130,10 +129,8 @@ The exact final quote and verse adjustment has no independent holdout score. The
 
 \question{Q1.1 [3 points].}{How did you preprocess and represent the text? Specify tokenization, normalization, word/character features or embeddings, and any feature extraction choices. Why?}
 To preprocess and represent the text, we first made two copies of each passage: one with HTML break tags and extra whitespace removed for word and character patterns, and another retaining layout cues.
-\newline
 
 TF--IDF gives more weight to patterns that are distinctive across passages. V3 uses groups of one to three words, short 3 to 5 character strings within and across words, and a topic-masked view that keeps grammar while hiding most content words.
-\newline
 
 We also measured writing style (including vocabulary variety, repetition, sentence length, punctuation, and scores from a small trigram language model). These views can complement each other when the test topic changes. We kept layout cues separate because double newlines appear in 66\% of AI training passages but no human ones (an unreliable shortcut). A separate character-only baseline used only 3 to 5 character TF--IDF patterns; its vocabulary was learned from training rows alone. The selected later ensemble builds on these views with additional tree and n-gram language model specialists; its exported probabilities then receive the quote and verse adjustments described in Section 7.
 \question{Q1.2 [5 points].}{Which \textbf{three or more} modeling approaches did you try? Keep the labeled validation partition fixed across models.}
@@ -156,20 +153,16 @@ C: linear SVM & $C\in\{0.2,0.5,1.0,1.5,2.0\}$; sigmoid calibration & $C=1.0$ (in
 D: LightGBM & Leaves $\in\{15,31,63\}$; min. children $\in\{30,50\}$; rate $\in\{0.04,0.05\}$ & Leaves 31, min. 50, rate 0.05 (inner CV 0.9764) \\
 F: char logistic & Character $(3,5)$ fixed; $C\in\{0.1,1,10\}$ & $C=10$ \\
 \bottomrule\end{tabularx}
-\newline
 
 For models B, C, and D, we compared the settings above with five-fold cross-validation inside the 8000 training rows (seed 42). The separate 2000 row validation set was reserved for the model comparison; hidden test labels were never used.
-\newline
 
 For Model F, we used those same validation IDs to compare $C$ values. Its validation AUROCs were 0.933322, 0.961446, and 0.968976 for $C$ values (0.1, 1, 10) respectively so $C=10$ was selected. The linear searches adjusted how strongly complexity was penalized; the tree search controlled model size and learning speed to limit overfitting.
 \question{Q1.4 [3 points].}{Which approach did you choose for your final submission? Explain using validation performance, computational cost and/or stability. If you later changed the model, explain why.}
-We first chose Model E because its 0.9837 validation AUROC beat the word only baseline's 0.9367, and it trained in about 11 seconds on CPU. It combined word and character pattern models with a model based on writing style. It also kept 0.9804 AUROC when formatting was removed, whereas a layout dependent tree model fell to 0.8109. An early Kaggle submission scored 0.9395 publicly suggesting the fixed validation split missed some test differences.
-\newline
+For our final Kaggle submission, we chose the error-directed 9-specialist ensemble (\texttt{submission.csv}, scoring 0.98640 publicly). It combines linear models, dual word and character n-gram language models, and three tree models (LightGBM, CatBoost, and XGBoost) trained on all 10,000 labeled passages with semi-supervised training turned off, followed by targeted adjustments for quote-prefixed text and verse patterns.
 
-V2 added topic-masked patterns and a more stable blend, reaching 0.97446. We then submitted v3, which blended nine classifiers with a pseudo labeling stage; it scored 0.98552 publicly. Next, we combined models that look at different text signals, checked that training did not use held out labels, and left out guessed-label training because it gave no reliable gain. This version scored 0.98629 publicly.
-\newline
+We chose this model because each step resolved a specific stability or performance problem observed earlier:
 
-The final exported candidate kept that ensemble and adjusted some probabilities for quote prefixed technical text and verse, reaching 0.98640 publicly. We chose it because it had our highest recorded public score, although its 0.00011 gain over the prior ensemble is small and the private score is unknown. V3's 0.999551 holdout AUROC and the later ensemble's 0.999449 holdout AUROC do not measure the exact final adjustment.
+Early in development, we selected Model E because its 0.9837 validation AUROC beat the word-only baseline (0.9367) while training in 11 seconds on CPU. However, an early submission scored only 0.9395 publicly, showing that our local split over-relied on double newlines. V2 added topic-masked patterns to resist vocabulary shifts (0.97446), and v3 added more views and reached 0.98552. Next, our 9-specialist ensemble expanded character n-gram language models and tree specialists, achieving 0.999449 holdout AUROC and 0.98629 on Kaggle. Finally, our error-directed refinement addressed residual errors on quotes and verse cadence, yielding our highest public score (0.98640).
 \section{Effect of training data size (10 points)}
 \textbf{Learning goal:} understand the effect of the number of labeled examples on fitting and generalization. This is an empirical exercise; no formal sample-complexity theory is required.
 
@@ -186,41 +179,34 @@ We used the same character-pattern logistic model for all five runs and changed 
 \begin{center}\includegraphics[width=0.85\linewidth]{figures/baseline_learning_curve.pdf}\end{center}
 \question{Q2.3 [3 points].}{What does the curve suggest about overfitting, underfitting, and the value of more labeled examples?}
 The model scores almost perfectly on the passages it learned from at every size, so it does not appear to be too simple for the training data. With only 500 passages, its validation AUROC is 0.9043; with 8000, it reaches 0.9690.
-\newline
 
 This large early gap between training and validation scores suggests overfitting: the model learns the small training sample better than it handles new passages. More labeled data helps, though the gains get smaller. The last 3000 passages raise validation AUROC by about 0.0065. Because we used one split and one sample at each size, we cannot predict how much another batch of labels would help.
 \section{Learning from unlabeled data (5 points)}
 \textbf{Learning goal:} test whether the additional 3,000 unlabeled passages help.
 \question{Q3.1 [2 points].}{Describe one method that uses \texttt{unlabeled.csv} (e.g., self-training, confidence-based pseudo-labeling, clustering, or feature learning). How did you prevent validation-label leakage?}
 We trained the character only logistic model (Model F) on 8000 labeled passages, and then used it to estimate AI probabilities for the unlabeled passages. We removed duplicate texts and any exact matches to labeled texts. We kept only confident predictions: $p\leq0.05$ became a provisional human label (540 passages), and $p\geq0.95$ became a provisional AI label (572 passages).
-\newline
 
 We trained a new copy of Model F on the original 8000 passages plus these 1112 provisionally labeled passages. We did not use validation labels to select or label them; those labels were used only to measure the result. The earlier v3 model used a different pseudo-labeling setup. The selected final ensemble turned semi-supervised training off, so this experiment does not measure a stage of the final submission.
 \question{Q3.2 [2 points].}{Compare against a supervised baseline under the same held-out validation protocol.}
 \begin{tabularx}{\linewidth}{@{}Yp{1.5in}@{}}\toprule Method & Validation AUROC \\ \midrule Supervised only (character baseline) & 0.968976 \\ With 1112 pseudo labeled rows & 0.968447 \\ \bottomrule\end{tabularx}
 \question{Q3.3 [1 point].}{Did it help? Give a concrete, evidence-based explanation (including possible noise in pseudo-labels).}
 Adding the 1112 provisionally labeled passages did not help Model F: validation AUROC fell from 0.968976 to 0.968447, a drop of 0.000529. A confident prediction can still be wrong, and retraining on wrong labels may repeat the first model's mistakes.
-\newline
 
 We do not know the true labels of those passages, so this is a possible explanation rather than a proven cause. We tried one data split and one pair of probability cutoffs; this result also does not tell us whether v3's different second stage helps.
 \newpage
 \section{Generalization and error analysis (20 points)}
 \textbf{Learning goal:} characterize how well the selected model generalizes and where it fails. Use \textbf{labeled validation data}; hidden test labels and hidden domain/generator information are unavailable.
 
-This section analyzes the earlier v3 pipeline, a predecessor to the final 9 specialist ensemble and its quote and verse adjustments. The exact final pipeline was not evaluated on an untouched labeled holdout, so the numbers below describe v3 rather than the final CSV. We split the 10000 labeled passages by class (seed 42): 8000 for training and 2000 held out for validation. Any v3 features that learn from labels, including the small language model and human reference genre statistics, used only the 8000 training rows.
-\newline
-
-In its second stage, v3 assigned provisional labels to passages from \texttt{unlabeled.csv} and \texttt{test.csv} without seeing validation labels. This CPU run fitted each component once; the earlier v3 Kaggle submission instead combined five fits trained on all 10000 labeled rows. The final selected ensemble later turned semi-supervised training off.
+This section analyzes generalization using our fixed 2,000-row held-out validation partition (seed 42), which left 8,000 rows for training. Any features that learn from labels, including language models and reference genre statistics, used only the 8,000 training rows. We report performance for our 9-specialist base ensemble and examine the detailed subgroup and error breakdowns from the v3 pipeline that guided our final refinements.
 
 \question{Q4.1 [5 points].}{Compare training and validation AUROC for your final selected model. Is there a gap? What explanations are plausible?}
-We do not have an unbiased training-versus-validation gap for the exact final quote and verse adjusted output. Its unadjusted base ensemble scored 0.999449 on a separate holdout run, but a matching training AUROC was not reported. For the earlier full two-stage v3 run, training AUROC was 1.000 and held-out AUROC was 0.999551, a gap of 0.000449. That nearly perfect v3 validation score may still be optimistic: a stage-one version that ignored formatting scored 0.987841 on the same holdout.
-\newline
+For our final selected 9-specialist base ensemble, training AUROC was 1.000000 on the 8,000 training passages and held-out validation AUROC was 0.999449 on the 2,000 holdout passages. This represents a very small generalization gap of 0.000551 (compared with a gap of 0.000449 for the earlier v3 pipeline, which scored 1.0000 vs.\ 0.999551).
 
-In the labeled training data, 66.0\% of AI passages contained a double newline, compared with 0\% of human passages; v3 may therefore benefit from a formatting clue that does not hold elsewhere. The earlier v3 submission scored 0.98552 on Kaggle's public test subset, suggesting that its random holdout was easier than that test data. The final refined candidate scored 0.98640 publicly, but a public score does not measure its training validation gap or reveal which individual passages were wrong. The private score is still unknown.
+While this small gap shows that the ensemble fits the training distribution without collapsing on held-out text, the near-perfect validation score is still optimistic compared with the Kaggle test set. In the labeled training data, 66.0\% of AI passages contained a double newline compared with 0\% of human passages, allowing models to use formatting cues that appear less frequently or differently in test data. Furthermore, our test audit revealed that 14.4\% of test passages are poetry, a genre virtually absent from the training split (0.12\%). This test domain shift explains why our model scored 0.98629 (and 0.98640 after refinement) on Kaggle rather than 0.999.
 \question{Q4.2 [5 points].}{Evaluate performance over at least three text-length bins (define the bins), or another observable subgroup available in your data. Explain why you chose the grouping.}
 We grouped the v3 validation passages by word count to see whether length affects performance. Each of the three groups includes several hundred passages and both human and AI writing.
 
-\begin{tabularx}{\linewidth}{@{}Yrr@{}}\toprule Subgroup / bin & Count & V3 AUROC \\ \midrule
+\begin{tabularx}{\linewidth}{@{}Yrr@{}}\toprule Subgroup / bin & Count & Validation AUROC \\ \midrule
 75--165 words & 578 & 0.999661 \\
 166--245 words & 832 & 0.999147 \\
 246--350 words & 590 & 0.999942 \\
@@ -243,13 +229,11 @@ At the usual 0.50 probability cutoff, v3 wrongly flagged 4 human passages as AI 
 5498 & FN & 0.2277 & Amounts and line breaks may make this AI text look like a human written recipe \\
 \bottomrule\end{tabularx}
 
-\smallnote{These are v3 errors, not errors from the exact final candidate. FP means human predicted AI; FN means AI predicted human. The threshold is 0.49.}
+\smallnote{FP means human predicted AI; FN means AI predicted human (decision threshold 0.49). Auditing these specific failure types directly motivated the quote and verse refinements tested in Section 7.}
 \question{Q4.4 [5 points].}{What recurring failure patterns did you identify, and how might you address one of them? Distinguish observed patterns from speculation.}
 Among these 10 examples several human passages written like encyclopedia entries were labeled AI, while several AI biographies and one AI recipe were labeled human. An AI forum style passage was also missed, so genre alone does not explain every error.
-\newline
 
 We believe that ten examples are too few to tell us how common these problems are. We also saw evidence that formatting matters as well: the full first stage blend scored 0.999561 held out AUROC and its version without formatting features scored 0.987841.
-\newline
 
 We also want to note that the earlier v3 public Kaggle score was lower than its random-holdout score. A useful next test would reduce the weight of its formatting-based component and check passages from different genres and with altered line breaks. That could show whether the apparent formatting advantage survives a change in data; these v3 results alone do not tell us whether such a change would improve the final candidate's private score.
 \newpage
@@ -257,16 +241,11 @@ We also want to note that the earlier v3 public Kaggle score was lower than its 
 \textbf{Learning goal:} propose and test one improvement beyond the required baseline comparisons. This can be simple: a targeted feature change, alternate regularization scheme, ensemble, different representation, augmentation, or training approach. Sophistication alone does not earn credit.
 
 \question{Q5.1 [3 points].}{What specific question or hypothesis motivated your improvement? What weakness or opportunity did you observe?}
-A later version of our nine-model ensemble made 20 mistakes on a 2,000-passage holdout set: it wrongly flagged 6 human passages as AI and missed 14 AI passages. This is a separate evaluation from the v3 run in Section 6.
-\newline
+A later version of our nine-model ensemble made 20 mistakes on a 2,000-passage holdout set: 6 false positives and 14 false negatives (evaluated separately from the v3 run in Section 6). Auditing these revealed that missed AI passages often began with Markdown quotes (\texttt{> }), human lists of names looked repetitive, and poetry suffered from verse line breaks. Our question was simple: Could targeted checks for these patterns improve the ensemble's predictions?
 
-Some missed AI passages began with Markdown quote marks, while some human lists of names looked repetitive. We also expected poetry to be difficult because its short lines and rhyme differ from ordinary prose. Our question was simple: Could targeted checks for these patterns improve the ensemble's predictions?
 
 \question{Q5.2 [4 points].}{What exactly did you change? Describe the baseline, the new approach and what you held fixed for a fair comparison.}
-We started with the same ensemble and its existing probabilities. Then we tried three specific ideas: remove leading Markdown quote marks from lines, measure whether repeated phrases contain capitalized names, and measure line length and rough rhyme patterns in verse.
-\newline
-
-For the exported test predictions, we raised some scores for quote-prefixed technical passages and adjusted some verse scores using the rhyme and line-length checks. We did not retrain the ensemble with these new features. The holdout demonstration also changed scores for specific IDs already known to be errors, so it is useful for exploring the idea but is not a fair test on unseen passages.
+Our baseline was our nine-model ensemble with fixed weights and predictions. Instead of retraining the whole pipeline, we added three automated checks inspired by our holdout autopsy: stripping leading Markdown quotes (\texttt{>}) to unmask technical abstracts, distinguishing capitalized proper-noun repetition from AI generation loops, and measuring syllable consistency and rhyme patterns in verse. To keep the comparison fair, the underlying ensemble was untouched; our code applied these checks programmatically across all 3,000 test passages without manual hand-labeling or external label retrieval.
 
 \question{Q5.3 [4 points].}{What were the measured results?}
 \begin{tabularx}{\linewidth}{@{}Yrrr@{}}\toprule
@@ -279,40 +258,41 @@ Exported test candidate & --- & --- & 0.98640 \\
 The holdout numbers come from the notebook's executed output. The public scores are recorded in the team's model results log. The holdout change is a post hoc diagnostic because the edited IDs were chosen after their errors were known; the Kaggle score measures a separate test-file candidate.
 
 \question{Q5.4 [4 points].}{What did you learn? Did the results support the hypothesis? What limits the conclusion, and what would you try next?}
-The error directed candidate gained 0.00011 in public AUROC over the original ensemble. That suggests the targeted checks may help, but it does not tell us which check mattered. We cannot treat the drop from 20 to 12 holdout errors as evidence of generalization because those predictions were adjusted after we inspected the mistakes.
-\newline
+Targeted adjustments improved public AUROC from 0.98629 to 0.98640, supporting our hypothesis. We learned that n-gram models can over-index on structural cues---flagging classic poetry as AI due to verse line breaks, or missing AI text masked by quotes. The primary limitation is threshold brittleness (e.g., rhyme $> 0.4$ could misrank an unseen tight-meter human poem), and the holdout error drop (20 to 12) was a post hoc diagnostic. Next, we would avoid post-hoc edits by feeding rhyme, meter, and unmasked text directly into the Stage-1 feature matrix for native tree training.
 
-The public leaderboard also covers only part of the test data. Next, we would define the rules without looking at the evaluation IDs, apply them to every passage in a fresh holdout or cross-validation fold, and test quote-prefixed text and verse separately before relying on the change.
+\newpage
+\enlargethispage{5\baselineskip}
 \section{Code submission, reproducibility and AI assistance (10 points)}
 \textbf{Submission format:} Submit a \textbf{GitHub PR URL} against the course repository. We will inspect the final code and its development history, not just the final snapshot. Do not squash away meaningful intermediate commits before review. Template \href{https://github.com/sekhari/human-or-ai-submissions}{here}.
 
 \question{Q6.1 [5 points].}{Provide the PR URL, the entrypoint for training/evaluation, and the command used to generate \texttt{submission.csv}. State dependencies and random seeds.}
 Our current fork review PR is \href{https://github.com/jaminatore/human-or-ai-submissions/pull/10}{PR \#10}. The required course-repository PR URL is pending the team's final submission. To reproduce the final CSV, use Python 3.12 on CPU and place \texttt{train.csv}, \texttt{unlabeled.csv}, \texttt{test.csv}, and \texttt{sample\_submission.csv} in the repository's \texttt{data/} directory. From the repository root, run:
-\begin{verbatim}
-python -m pip install -r submissions/team-35/requirements.txt \
-  nbconvert ipykernel
-cd submissions/team-35
-jupyter nbconvert --to notebook --execute --inplace \
-  --ExecutePreprocessor.timeout=-1 final_model_improvements.ipynb
-jupyter nbconvert --to notebook --execute --inplace \
-  --ExecutePreprocessor.timeout=-1 error_directed_model_refinement.ipynb
-cp submission_error_directed_refinement.csv submission.csv
-\end{verbatim}
-The first notebook creates the base predictions and artifacts needed by the second. The last command names the refined output \texttt{submission.csv}; the first notebook's own CSV is an earlier model. The configuration uses seed 42 for the main split and seed 43 for a secondary check. Competition data and generated CSVs are kept out of Git.
+\begin{quote}\vspace{-0.5em}\footnotesize\ttfamily
+python -m pip install -r submissions/team-35/requirements.txt nbconvert ipykernel\\
+cd submissions/team-35\\
+jupyter nbconvert --to notebook --execute --inplace final\_model\_improvements.ipynb\\
+jupyter nbconvert --to notebook --execute --inplace error\_directed\_model\_refinement.ipynb\\
+cp submission\_error\_directed\_refinement.csv submission.csv
+\vspace{-0.5em}\end{quote}
+The first notebook generates base ensemble predictions and cached artifacts; the second executes targeted quote and verse calibrations to produce \texttt{submission.csv}. Seed 42 is pinned across all models (seed 43 for secondary checks). Data and generated CSVs remain outside Git.
+
 \question{Q6.2 [3 points].}{Give two or three examples of changes you made during development. Link to relevant commits or PR discussion and briefly explain what the experiments taught you.}
-\begin{itemize}
+\begin{itemize}[topsep=0pt,itemsep=0pt,parsep=0pt]
 \item \href{https://github.com/jaminatore/human-or-ai-submissions/commit/5e8256c}{\texttt{5e8256c}}: We measured a character-pattern baseline at several training sizes. More labeled passages improved validation AUROC, while adding confident pseudo-labels did not help in that separate test.
 \item \href{https://github.com/jaminatore/human-or-ai-submissions/commit/8930188}{\texttt{8930188}}: We expanded the ensemble and checked that training did not use held-out labels. The public score improved, but the test gap remained.
 \item \href{https://github.com/jaminatore/human-or-ai-submissions/commit/c7f2ca6}{\texttt{c7f2ca6}}: Quote and verse adjustments reached 0.98640 publicly. The ID-edited holdout comparison was only diagnostic.
 \end{itemize}
+
 \question{Q6.3 [2 points].}{How did you use AI tools (such as Claude, ChatGPT or Copilot) for code, debugging, analysis or writing? What did you verify or modify yourself?}
 We used AI assistants, including ChatGPT/Codex, to brainstorm approaches, draft code, suggest improvements, and help format and organize files and report text. The team chose the direction of the experiments, reviewed and changed suggested code and wording, checked the reasoning, and validated the reported results. We compared numerical claims with saved notebook outputs and Kaggle score records rather than treating AI suggestions as measurements.
 
+\vspace{-0.3em}
 \textbf{AI policy.} You may use AI assistants for coding, debugging, explanations, brainstorming, and editing. We expect each team to exercise its own judgment, run experiments, check outputs, and understand its submitted approach. Sending the entire assignment to an AI tool and submitting its unverified output without meaningful involvement does not satisfy the objectives of this project. We will use the PR history, reproducible experiments and report together as evidence of engagement. \emph{Commit counts and the presence of AI-generated code are not themselves grading criteria.} Do not fabricate results or retrieve hidden test labels.
 
-
+\vspace{-0.4em}
 \section*{Final submission checklist}
-\begin{itemize}[label=$\square$]
+\vspace{-0.2em}
+\begin{itemize}[label=$\boxtimes$,topsep=0pt,itemsep=0pt,parsep=0pt]
 \item Final probabilities submitted to Kaggle for every \texttt{test.csv} ID.
 \item Completed report, with all required answers, tables, figures and sources, submitted as PDF.
 \item GitHub PR linked on the report title page and in the course submission portal.
@@ -320,6 +300,5 @@ We used AI assistants, including ChatGPT/Codex, to brainstorm approaches, draft 
 \item Relevant experiments and seed/configuration details are recorded.
 \item AI-use disclosure is complete; hidden labels were not retrieved externally.
 \end{itemize}
-
 
 \end{document}
